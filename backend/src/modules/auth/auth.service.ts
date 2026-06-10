@@ -51,7 +51,7 @@ export class AuthService {
       ['Cerrado Perdido', 7, 0, '#6b7280'],
     ];
     for (const [name, order, prob, color] of stages) {
-      run('INSERT INTO pipeline_stages (id, pipeline_id, name, "order", probability, color) VALUES (?, ?, ?, ?, ?, ?)',
+      run('INSERT INTO pipeline_stages (id, pipeline_id, name, order_index, probability, color) VALUES (?, ?, ?, ?, ?, ?)',
         [uuid(), pipelineId, name, order, prob, color]);
     }
 
