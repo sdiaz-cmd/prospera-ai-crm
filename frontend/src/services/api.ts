@@ -85,6 +85,12 @@ api.interceptors.response.use(
       }
     }
 
+    // Trial expirado → redirigir a pantalla de expiración
+    if (error.response?.status === 402) {
+      window.location.href = '/trial-expired';
+      return Promise.reject(error);
+    }
+
     // Mostrar errores de servidor excepto 401 (se maneja arriba)
     if (error.response?.status !== 401 && error.response?.status !== 422) {
       const message = (error.response?.data as { message?: string })?.message || 'Error del servidor';

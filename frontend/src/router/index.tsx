@@ -5,6 +5,7 @@ import { Login } from '@/pages/auth/Login';
 import { Register } from '@/pages/auth/Register';
 import { ForgotPassword } from '@/pages/auth/ForgotPassword';
 import { ResetPassword } from '@/pages/auth/ResetPassword';
+import TrialExpired from '@/pages/TrialExpired';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
 import { Users } from '@/pages/users/Users';
 import { Settings } from '@/pages/settings/Settings';
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: '/register', element: <Register /> },
       { path: '/forgot-password', element: <ForgotPassword /> },
       { path: '/reset-password', element: <ResetPassword /> },
+      { path: '/trial-expired', element: <TrialExpired /> },
     ],
   },
 
