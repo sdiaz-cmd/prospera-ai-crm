@@ -33,4 +33,12 @@ export function all<T = Record<string, unknown>>(sql: string, params: unknown[] 
   return (stmt.all(...params) as unknown[]).map((r) => Object.assign({}, r)) as T[];
 }
 
+export function count(sql: string, params: unknown[] = []): number {
+  const stmt = db.prepare(sql);
+  const row = stmt.get(...params) as Record<string, unknown> | undefined;
+  if (!row) return 0;
+  const val = Object.values(row)[0];
+  return typeof val === 'number' ? val : Number(val) || 0;
+}
+
 export default db;

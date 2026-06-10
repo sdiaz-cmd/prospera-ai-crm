@@ -7,6 +7,7 @@ async function getOpenAI() {
   if (openai) return openai;
   if (!process.env.OPENAI_API_KEY) return null;
   try {
+    // @ts-ignore
     const { default: OpenAI } = await import('openai');
     openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) as typeof openai;
     return openai;

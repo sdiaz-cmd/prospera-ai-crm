@@ -22,7 +22,7 @@ export function getOne(req: AuthenticatedRequest, res: Response) {
 
 export function create(req: AuthenticatedRequest, res: Response) {
   try {
-    const p = svc.create(req.user!.companyId, req.user!.id, req.body);
+    const p = svc.create(req.user!.companyId, req.user!.userId, req.body);
     res.status(201).json(p);
   } catch (e: unknown) { res.status(400).json({ error: e instanceof Error ? e.message : 'Error' }); }
 }

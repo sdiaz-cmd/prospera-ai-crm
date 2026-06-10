@@ -20,7 +20,7 @@ export function getOne(req: AuthenticatedRequest, res: Response) {
 
 export function create(req: AuthenticatedRequest, res: Response) {
   try {
-    const c = svc.create(req.user!.companyId, req.user!.id, req.body);
+    const c = svc.create(req.user!.companyId, req.user!.userId, req.body);
     res.status(201).json(c);
   } catch (e: unknown) { res.status(400).json({ error: e instanceof Error ? e.message : 'Error' }); }
 }
@@ -41,7 +41,7 @@ export function send(req: AuthenticatedRequest, res: Response) {
 
 export function duplicate(req: AuthenticatedRequest, res: Response) {
   try {
-    const c = svc.duplicate(req.params.id, req.user!.companyId, req.user!.id);
+    const c = svc.duplicate(req.params.id, req.user!.companyId, req.user!.userId);
     res.status(201).json(c);
   } catch (e: unknown) { res.status(400).json({ error: e instanceof Error ? e.message : 'Error' }); }
 }
