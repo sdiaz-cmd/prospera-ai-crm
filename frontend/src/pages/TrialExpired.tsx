@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/authStore';
 
 export default function TrialExpired() {
-  const { logout } = useAuthStore();
+  const { clearAuth } = useAuthStore();
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -41,7 +41,7 @@ export default function TrialExpired() {
           </a>
 
           <button
-            onClick={logout}
+            onClick={clearAuth}
             className="text-gray-400 hover:text-gray-600 text-sm transition-colors w-full py-2"
           >
             Cerrar sesión
