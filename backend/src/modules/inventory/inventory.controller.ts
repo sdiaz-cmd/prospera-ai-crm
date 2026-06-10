@@ -4,10 +4,6 @@ import { AuthenticatedRequest } from '../../types';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const XLSX = require('xlsx');
 
-interface MulterRequest extends AuthenticatedRequest {
-  file?: { buffer: Buffer; originalname: string; mimetype: string; size: number };
-}
-
 const service = new InventoryService();
 
 export async function getStock(req: AuthenticatedRequest, res: Response) {
@@ -35,11 +31,13 @@ export async function addMovement(req: AuthenticatedRequest, res: Response) {
   }
 }
 
-export async function analyzeExcel(req: MulterRequest, res: Response) {
+export async function analyzeExcel(req: AuthenticatedRequest, res: Response) {
   try {
-    if (!req.file) { res.status(400).json({ message: 'No se recibió archivo' }); return; }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const file = (req as any).file as { buffer: Buffer } | undefined;
+    if (!file) { res.status(400).json({ message: 'No se recibió archivo' }); return; }
 
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' }) as Record<string, unknown>[];
@@ -80,8 +78,6 @@ export async function importExcel(req: AuthenticatedRequest, res: Response) {
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────
-
 function toNum(v: unknown): number {
   if (typeof v === 'number') return v;
   const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
@@ -100,13 +96,10 @@ function mapColumns(headers: string[]): Record<string, string> {
     stock:     /stock|cantidad|qty|inventario|existencia/i,
     minStock:  /m[ií]nimo|min.*stock|stock.*min/i,
   };
-
   for (const [field, pattern] of Object.entries(patterns)) {
     const match = headers.find(h => pattern.test(h));
     if (match) map[field] = match;
   }
-
   if (!map.name && headers[0]) map.name = headers[0];
-
   return map;
 }
