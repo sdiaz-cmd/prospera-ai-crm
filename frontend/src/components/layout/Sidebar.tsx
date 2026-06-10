@@ -45,6 +45,7 @@ const navItems: NavItem[] = [
       { label: 'Inventario', to: '/erp/inventory', icon: Boxes, soon: true },
     ],
   },
+  { label: 'Usuarios', to: '/users', icon: Users },
   { label: 'Marketing', to: '/marketing', icon: Megaphone },
   { label: 'IA & Automatización', to: '/ai', icon: Bot },
   { label: 'Landing Pages', to: '/landing', icon: Globe },

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MoreVertical, Shield, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Shield, UserCheck, UserX, Trash2, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { usersService } from '@/services/users.service';
 import { rolesService } from '@/services/roles.service';
+import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -23,9 +24,15 @@ interface InviteForm {
   password: string;
 }
 
+interface InviteEmailForm {
+  email: string;
+  roleId: string;
+}
+
 export function Users() {
   const [search, setSearch] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEmailInviteModal, setShowEmailInviteModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -63,9 +70,23 @@ export function Users() {
     },
   });
 
+  const sendInviteMutation = useMutation({
+    mutationFn: (data: InviteEmailForm) => api.post('/invitations', data),
+    onSuccess: () => {
+      toast.success('Invitación enviada por correo');
+      setShowEmailInviteModal(false);
+      resetEmail();
+    },
+    onError: (e: { response?: { data?: { error?: string } } }) => {
+      toast.error(e?.response?.data?.error || 'Error al enviar invitación');
+    },
+  });
+
   const { register, handleSubmit, reset, formState: { errors } } = useForm<InviteForm>();
+  const { register: registerEmail, handleSubmit: handleSubmitEmail, reset: resetEmail, formState: { errors: errorsEmail } } = useForm<InviteEmailForm>();
 
   const onInvite = (data: InviteForm) => inviteMutation.mutate(data);
+  const onSendInvite = (data: InviteEmailForm) => sendInviteMutation.mutate(data);
 
   const users = data?.data || [];
 
@@ -77,9 +98,14 @@ export function Users() {
           <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
           <p className="text-gray-500 mt-1">Gestiona el equipo y sus permisos de acceso</p>
         </div>
-        <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowInviteModal(true)}>
-          Agregar Usuario
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" leftIcon={<Mail className="w-4 h-4" />} onClick={() => setShowEmailInviteModal(true)}>
+            Invitar por email
+          </Button>
+          <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowInviteModal(true)}>
+            Crear usuario
+          </Button>
+        </div>
       </div>
 
       {/* Barra de búsqueda */}
@@ -204,7 +230,48 @@ export function Users() {
         </Card>
       )}
 
-      {/* Modal invitar usuario */}
+      {/* Modal invitar por email */}
+      <Modal
+        isOpen={showEmailInviteModal}
+        onClose={() => { setShowEmailInviteModal(false); resetEmail(); }}
+        title="Invitar por email"
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => { setShowEmailInviteModal(false); resetEmail(); }}>Cancelar</Button>
+            <Button form="email-invite-form" type="submit" loading={sendInviteMutation.isPending} leftIcon={<Mail className="w-4 h-4" />}>
+              Enviar invitación
+            </Button>
+          </>
+        }
+      >
+        <form id="email-invite-form" onSubmit={handleSubmitEmail(onSendInvite)} className="space-y-4">
+          <p className="text-sm text-gray-500">El trabajador recibirá un email con un enlace para crear su contraseña y activar su cuenta.</p>
+          <Input
+            label="Correo electrónico"
+            type="email"
+            placeholder="trabajador@empresa.com"
+            error={errorsEmail.email?.message}
+            required
+            {...registerEmail('email', { required: 'Requerido', pattern: { value: /\S+@\S+\.\S+/, message: 'Correo inválido' } })}
+          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Rol <span className="text-red-500">*</span></label>
+            <select
+              className="w-full rounded-lg border border-gray-300 bg-white text-gray-900 text-sm px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              {...registerEmail('roleId', { required: 'Selecciona un rol' })}
+            >
+              <option value="">Seleccionar rol...</option>
+              {rolesData?.map((role) => (
+                <option key={role.id} value={role.id}>{role.name}</option>
+              ))}
+            </select>
+            {errorsEmail.roleId && <p className="mt-1.5 text-xs text-red-600">{errorsEmail.roleId.message}</p>}
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal crear usuario manual */}
       <Modal
         isOpen={showInviteModal}
         onClose={() => { setShowInviteModal(false); reset(); }}

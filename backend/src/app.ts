@@ -39,6 +39,8 @@ import campaignsRoutes from './modules/marketing/campaigns.routes';
 import aiRoutes from './modules/ai/ai.routes';
 // Apollo
 import apolloRoutes from './modules/apollo/apollo.routes';
+// Invitations
+import invitationsRoutes from './modules/invitations/invitations.routes';
 
 // Inicializar schema de base de datos
 createSchema();
@@ -106,6 +108,8 @@ app.use('/api/campaigns', campaignsRoutes);
 app.use('/api/ai', aiRoutes);
 // Apollo
 app.use('/api/apollo', apolloRoutes);
+// Invitations
+app.use('/api/invitations', invitationsRoutes);
 
 // ─── Servir frontend compilado (modo compartido/público) ─────────────────────
 // Cuando el frontend está compilado (npm run build en /frontend),

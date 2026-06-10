@@ -531,4 +531,22 @@ export function createSchema() {
   // ── Columnas Apollo (migración incremental para DBs existentes) ──
   try { db.exec('ALTER TABLE companies ADD COLUMN apollo_api_key TEXT'); } catch { /* ya existe */ }
   try { db.exec('ALTER TABLE companies ADD COLUMN apollo_search_roles TEXT'); } catch { /* ya existe */ }
+
+  // ── Tabla de invitaciones ────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_invitations (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      invited_by TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      accepted_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+      FOREIGN KEY (role_id) REFERENCES roles(id),
+      FOREIGN KEY (invited_by) REFERENCES users(id)
+    );
+  `);
 }
