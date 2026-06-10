@@ -542,16 +542,17 @@ export function Settings() {
 
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { name: 'Starter', price: '$299', features: ['5 usuarios', 'CRM completo', 'Soporte por correo'] },
-                    { name: 'Growth', price: '$699', features: ['15 usuarios', 'CRM + ERP', 'Marketing', 'Soporte prioritario'], popular: true },
-                    { name: 'Enterprise', price: 'Custom', features: ['Usuarios ilimitados', 'Todo incluido', 'IA integrada', 'Gerente de cuenta'] },
+                    { name: 'Starter', price: '$80.000 CLP', subPrice: '~$88 USD', features: ['5 usuarios', 'CRM completo', 'Soporte por correo'] },
+                    { name: 'Growth', price: '$150.000 CLP', subPrice: '~$164 USD', features: ['15 usuarios', 'CRM + ERP', 'Marketing', 'Soporte prioritario'], popular: true },
+                    { name: 'Enterprise', price: '$250.000 CLP', subPrice: '~$274 USD', features: ['Usuarios ilimitados', 'Todo incluido', 'IA integrada', 'Gerente de cuenta'] },
                   ].map((plan) => (
                     <div key={plan.name} className={cn('p-5 rounded-xl border-2 transition-colors', plan.popular ? 'border-primary-500 bg-primary-50' : 'border-gray-200')}>
                       {plan.popular && (
                         <Badge variant="info" className="mb-3">Más popular</Badge>
                       )}
                       <p className="font-bold text-gray-900 text-lg">{plan.name}</p>
-                      <p className="text-2xl font-bold text-primary-600 my-2">{plan.price}<span className="text-sm text-gray-500">/mes</span></p>
+                      <p className="text-xl font-bold text-primary-600 my-1">{plan.price}<span className="text-sm text-gray-500 font-normal">/mes</span></p>
+                      <p className="text-sm text-gray-400 mb-3">{(plan as { subPrice?: string }).subPrice}/mes</p>
                       <ul className="space-y-1.5 text-sm text-gray-600">
                         {plan.features.map((f) => (
                           <li key={f} className="flex items-center gap-2">
