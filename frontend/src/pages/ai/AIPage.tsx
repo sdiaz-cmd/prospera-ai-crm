@@ -28,7 +28,10 @@ const aiApi = {
     api.post<ScoreResult>(`/ai/score/${leadId}`).then(r => r.data),
   scoreAll: () => api.post<{ scored: number; results: ScoreResult[] }>('/ai/score-all').then(r => r.data),
   chat: (question: string) => api.post<{ answer: string; aiPowered: boolean }>('/ai/chat', { question }).then(r => r.data),
-  leads: () => api.get<{ data: Lead[] }>('/leads?limit=50').then(r => r.data.data),
+  leads: () => api.get<{ data: { data: Lead[] } }>('/leads?limit=50').then(r => {
+    const d = r.data.data;
+    return Array.isArray(d) ? d : (d as { data: Lead[] })?.data ?? [];
+  }),
 };
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
