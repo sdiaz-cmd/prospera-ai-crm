@@ -1,0 +1,10 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "node --experimental-sqlite dist/server.js"
+healthcheckPath = "/health"
+
+[[mounts]]
+mountPath = "/data"
