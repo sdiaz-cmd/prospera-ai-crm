@@ -44,15 +44,21 @@ export class InvitationsService {
     const company = get<{ name: string }>('SELECT name FROM companies WHERE id = ?', [companyId]);
     const inviter = get<{ first_name: string; last_name: string }>('SELECT first_name, last_name FROM users WHERE id = ?', [invitedBy]);
 
-    await this.sendInvitationEmail(
-      data.email,
-      company?.name || 'Tu empresa',
-      `${inviter?.first_name || ''} ${inviter?.last_name || ''}`.trim(),
-      role.name,
-      token
-    );
-
     const link = `${APP_URL}/invite/${token}`;
+
+    // Intentar enviar email — si falla, igual retornamos el link para compartir manualmente
+    try {
+      await this.sendInvitationEmail(
+        data.email,
+        company?.name || 'Tu empresa',
+        `${inviter?.first_name || ''} ${inviter?.last_name || ''}`.trim(),
+        role.name,
+        token
+      );
+    } catch (emailErr) {
+      console.warn('[INVITACIÓN] Email no enviado (continúa):', (emailErr as Error).message);
+    }
+
     return { id: invitationId, email: data.email, role: role.name, expiresAt, link };
   }
 
