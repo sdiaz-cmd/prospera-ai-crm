@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/auth.middleware';
+import { getSuppliers, getSupplier, createSupplier, updateSupplier, deleteSupplier, validateCreate, validateUpdate } from './suppliers.controller';
+const router = Router();
+router.use(authenticate);
+router.get('/', getSuppliers);
+router.get('/:id', getSupplier);
+router.post('/', validateCreate, createSupplier);
+router.put('/:id', validateUpdate, updateSupplier);
+router.delete('/:id', deleteSupplier);
+export default router;

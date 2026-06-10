@@ -1,0 +1,665 @@
+// ============================================================
+// PROSPERA.AI — Esquema de Base de Datos Completo
+// Cubre las 8 fases del producto SaaS
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// FASE 1: BASE SAAS — Core del sistema multiempresa
+// ============================================================
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  website     String?
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  country     String?
+  timezone    String   @default("America/Mexico_City")
+  currency    String   @default("MXN")
+  plan        String   @default("trial") // trial, starter, growth, enterprise
+  planStatus  String   @default("active") // active, suspended, cancelled
+  trialEndsAt DateTime?
+  isActive    Boolean  @default(true)
+  settings    String?  // JSON blob para configuraciones adicionales
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  users         UserCompany[]
+  roles         Role[]
+  leads         Lead[]
+  contacts      Contact[]
+  accounts      Account[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  tasks         CrmTask[]
+  quotes        Quote[]
+  products      Product[]
+  suppliers     Supplier[]
+  expenses      Expense[]
+  invoices      Invoice[]
+  campaigns     Campaign[]
+  emailTemplates EmailTemplate[]
+  integrations  Integration[]
+  webhooks      Webhook[]
+  auditLogs     AuditLog[]
+  pipelines     Pipeline[]
+
+  @@map("companies")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  avatarUrl   String?
+  isActive    Boolean  @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  companies       UserCompany[]
+  refreshTokens   RefreshToken[]
+  assignedLeads   Lead[]        @relation("LeadAssignee")
+  assignedTasks   CrmTask[]     @relation("TaskAssignee")
+  activities      Activity[]    @relation("ActivityOwner")
+  createdQuotes   Quote[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model UserCompany {
+  id        String  @id @default(uuid())
+  userId    String
+  companyId String
+  roleId    String
+  isOwner   Boolean @default(false)
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, companyId])
+  @@map("user_companies")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  companyId   String?  // null = rol del sistema
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company         Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userCompanies   UserCompany[]
+  rolePermissions RolePermission[]
+
+  @@unique([companyId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(uuid())
+  module      String // users, crm, erp, marketing, reports, settings
+  action      String // create, read, update, delete, export, import
+  description String?
+
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  companyId  String
+  userId     String?
+  module     String
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?  // JSON
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// FASE 2: CRM
+// ============================================================
+
+model Pipeline {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stages  PipelineStage[]
+
+  @@map("pipelines")
+}
+
+model PipelineStage {
+  id           String  @id @default(uuid())
+  pipelineId   String
+  name         String
+  order        Int
+  probability  Int     @default(0) // 0-100%
+  color        String  @default("#6366f1")
+
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+
+  @@map("pipeline_stages")
+}
+
+model Lead {
+  id           String   @id @default(uuid())
+  companyId    String
+  assigneeId   String?
+  firstName    String
+  lastName     String?
+  email        String?
+  phone        String?
+  company      String?
+  position     String?
+  source       String?  // web, referral, social, cold_call, event, other
+  status       String   @default("new") // new, contacted, qualified, unqualified, converted
+  score        Int      @default(0)
+  notes        String?
+  tags         String?  // JSON array
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  convertedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  companyRef Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignee   User?     @relation("LeadAssignee", fields: [assigneeId], references: [id])
+  activities Activity[]
+  tasks      CrmTask[]
+
+  @@map("leads")
+}
+
+model Contact {
+  id         String   @id @default(uuid())
+  companyId  String
+  accountId  String?
+  firstName  String
+  lastName   String?
+  email      String?
+  phone      String?
+  position   String?
+  department String?
+  notes      String?
+  tags       String?  // JSON array
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  companyRef    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  account       Account?      @relation(fields: [accountId], references: [id])
+  opportunities Opportunity[]
+  activities    Activity[]
+  tasks         CrmTask[]
+
+  @@map("contacts")
+}
+
+model Account {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  website     String?
+  phone       String?
+  email       String?
+  industry    String?
+  employees   Int?
+  revenue     Float?
+  address     String?
+  city        String?
+  country     String?
+  notes       String?
+  tags        String?  // JSON array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contacts      Contact[]
+  opportunities Opportunity[]
+  activities    Activity[]
+  tasks         CrmTask[]
+
+  @@map("accounts")
+}
+
+model Opportunity {
+  id          String   @id @default(uuid())
+  companyId   String
+  stageId     String
+  contactId   String?
+  accountId   String?
+  name        String
+  value       Float    @default(0)
+  currency    String   @default("MXN")
+  probability Int      @default(0)
+  expectedCloseDate DateTime?
+  status      String   @default("open") // open, won, lost
+  notes       String?
+  lostReason  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef  Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stage       PipelineStage  @relation(fields: [stageId], references: [id])
+  contact     Contact?       @relation(fields: [contactId], references: [id])
+  account     Account?       @relation(fields: [accountId], references: [id])
+  activities  Activity[]
+  tasks       CrmTask[]
+  quoteItems  QuoteItem[]
+
+  @@map("opportunities")
+}
+
+model Activity {
+  id             String   @id @default(uuid())
+  companyId      String
+  ownerId        String
+  leadId         String?
+  contactId      String?
+  accountId      String?
+  opportunityId  String?
+  type           String   // call, email, meeting, note, demo, visit
+  subject        String
+  description    String?
+  outcome        String?
+  scheduledAt    DateTime?
+  completedAt    DateTime?
+  duration       Int?     // minutos
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  companyRef   Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner        User         @relation("ActivityOwner", fields: [ownerId], references: [id])
+  lead         Lead?        @relation(fields: [leadId], references: [id])
+  contact      Contact?     @relation(fields: [contactId], references: [id])
+  account      Account?     @relation(fields: [accountId], references: [id])
+  opportunity  Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@map("activities")
+}
+
+model CrmTask {
+  id            String   @id @default(uuid())
+  companyId     String
+  assigneeId    String?
+  leadId        String?
+  contactId     String?
+  accountId     String?
+  opportunityId String?
+  title         String
+  description   String?
+  priority      String   @default("medium") // low, medium, high, urgent
+  status        String   @default("pending") // pending, in_progress, completed, cancelled
+  dueDate       DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  companyRef   Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  lead         Lead?        @relation(fields: [leadId], references: [id])
+  contact      Contact?     @relation(fields: [contactId], references: [id])
+  account      Account?     @relation(fields: [accountId], references: [id])
+  opportunity  Opportunity? @relation(fields: [opportunityId], references: [id])
+
+  @@map("crm_tasks")
+}
+
+model Quote {
+  id          String   @id @default(uuid())
+  companyId   String
+  createdById String
+  number      String   // Q-2024-001
+  title       String
+  status      String   @default("draft") // draft, sent, accepted, rejected, expired
+  validUntil  DateTime?
+  subtotal    Float    @default(0)
+  discount    Float    @default(0)
+  tax         Float    @default(0)
+  total       Float    @default(0)
+  currency    String   @default("MXN")
+  notes       String?
+  terms       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy  User        @relation(fields: [createdById], references: [id])
+  items      QuoteItem[]
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id            String  @id @default(uuid())
+  quoteId       String
+  opportunityId String?
+  productId     String?
+  description   String
+  quantity      Float   @default(1)
+  unitPrice     Float   @default(0)
+  discount      Float   @default(0)
+  total         Float   @default(0)
+
+  quote       Quote       @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  opportunity Opportunity? @relation(fields: [opportunityId], references: [id])
+  product     Product?    @relation(fields: [productId], references: [id])
+
+  @@map("quote_items")
+}
+
+// ============================================================
+// FASE 3: ERP BÁSICO
+// ============================================================
+
+model Product {
+  id          String   @id @default(uuid())
+  companyId   String
+  categoryId  String?
+  name        String
+  description String?
+  sku         String?
+  type        String   @default("product") // product, service
+  price       Float    @default(0)
+  cost        Float    @default(0)
+  currency    String   @default("MXN")
+  unit        String?  // pieza, hora, kg, etc.
+  isActive    Boolean  @default(true)
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef      Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category        ProductCategory? @relation(fields: [categoryId], references: [id])
+  inventory       InventoryItem[]
+  quoteItems      QuoteItem[]
+  invoiceItems    InvoiceItem[]
+  purchaseItems   PurchaseOrderItem[]
+
+  @@map("products")
+}
+
+model ProductCategory {
+  id        String @id @default(uuid())
+  name      String
+  parentId  String?
+
+  products  Product[]
+  parent    ProductCategory?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children  ProductCategory[] @relation("CategoryParent")
+
+  @@map("product_categories")
+}
+
+model InventoryItem {
+  id          String   @id @default(uuid())
+  productId   String
+  quantity    Float    @default(0)
+  minStock    Float    @default(0)
+  maxStock    Float?
+  location    String?
+  updatedAt   DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId])
+  @@map("inventory_items")
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  email     String?
+  phone     String?
+  contact   String?
+  address   String?
+  city      String?
+  country   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyRef     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  companyId   String
+  supplierId  String
+  number      String   // PO-2024-001
+  status      String   @default("draft") // draft, sent, received, cancelled
+  expectedAt  DateTime?
+  receivedAt  DateTime?
+  subtotal    Float    @default(0)
+  tax         Float    @default(0)
+  total       Float    @default(0)
+  currency    String   @default("MXN")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  items      PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String @id @default(uuid())
+  purchaseOrderId String
+  productId       String?
+  description     String
+  quantity        Float  @default(1)
+  unitCost        Float  @default(0)
+  total           Float  @default(0)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product?      @relation(fields: [productId], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  companyId   String
+  category    String   // travel, software, office, marketing, other
+  description String
+  amount      Float
+  currency    String   @default("MXN")
+  date        DateTime
+  receiptUrl  String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  companyRef Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
+}
+
+model Invoice {
+  id          String   @id @default(uuid())
+  companyId   String
+  number      String   // INV-2024-001
+  status      String   @default("draft") // draft, sent, paid, overdue, cancelled
+  dueDate     DateTime?
+  paidAt      DateTime?
+  subtotal    Float    @default(0)
+  tax         Float    @default(0)
+  total       Float    @default(0)
+  currency    String   @default("MXN")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items      InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String @id @default(uuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Float  @default(1)
+  unitPrice   Float  @default(0)
+  total       Float  @default(0)
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("invoice_items")
+}
+
+// ============================================================
+// FASE 4: MARKETING
+// ============================================================
+
+model Campaign {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  type        String   // email, social, paid, seo, event
+  status      String   @default("draft") // draft, active, paused, completed
+  budget      Float?
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  metrics     String?  // JSON: opens, clicks, conversions, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("campaigns")
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  companyId String
+  name      String
+  subject   String
+  body      String   // HTML content
+  variables String?  // JSON: list of template variables
+  category  String?  // welcome, followup, proposal, newsletter
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  companyRef Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("email_templates")
+}
+
+// ============================================================
+// FASE 8: INTEGRACIONES (arquitectura preparada)
+// ============================================================
+
+model Integration {
+  id          String   @id @default(uuid())
+  companyId   String
+  type        String   // gmail, outlook, whatsapp, apollo, linkedin, n8n, openai, hubspot
+  name        String
+  status      String   @default("inactive") // active, inactive, error
+  config      String?  // JSON cifrado con configuración
+  metadata    String?  // JSON con datos adicionales
+  lastSyncAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, type])
+  @@map("integrations")
+}
+
+model Webhook {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  url         String
+  secret      String?
+  events      String   // JSON array: lead.created, opportunity.won, etc.
+  isActive    Boolean  @default(true)
+  lastCalledAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyRef Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}

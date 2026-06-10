@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/auth.middleware';
+import { getProducts, getProduct, createProduct, updateProduct, adjustStock, getProductStats, deleteProduct, validateCreate, validateUpdate } from './products.controller';
+const router = Router();
+router.use(authenticate);
+router.get('/stats', getProductStats);
+router.get('/', getProducts);
+router.get('/:id', getProduct);
+router.post('/', validateCreate, createProduct);
+router.put('/:id', validateUpdate, updateProduct);
+router.patch('/:id/stock', adjustStock);
+router.delete('/:id', deleteProduct);
+export default router;

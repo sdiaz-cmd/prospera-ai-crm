@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { authenticate } from '../../middleware/auth.middleware';
+import { getInvoices, getInvoice, createInvoice, updateInvoice, changeInvoiceStatus, deleteInvoice, getInvoiceStats, validateCreate, validateUpdate } from './invoices.controller';
+const router = Router();
+router.use(authenticate);
+router.get('/stats', getInvoiceStats);
+router.get('/', getInvoices);
+router.get('/:id', getInvoice);
+router.post('/', validateCreate, createInvoice);
+router.put('/:id', validateUpdate, updateInvoice);
+router.patch('/:id/status', changeInvoiceStatus);
+router.delete('/:id', deleteInvoice);
+export default router;

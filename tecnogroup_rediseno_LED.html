@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tecnogroup — Pantallas LED y Tecnología Digital para Chile</title>
+<meta name="description" content="Tecnogroup: Líderes en pantallas LED, videowalls y sistemas de integración digital en Chile. Nike, Cencosud, Entel y +500 empresas confían en nosotros. Cotiza gratis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #050508;
+  --dark: #0a0b10;
+  --dark2: #10121a;
+  --cyan: #00e5ff;
+  --blue: #0066ff;
+  --purple: #7c3aed;
+  --white: #ffffff;
+  --gray: #8892a4;
+  --light: #e2e8f0;
+  --glow-cyan: 0 0 20px rgba(0,229,255,0.5), 0 0 60px rgba(0,229,255,0.2);
+  --glow-blue: 0 0 20px rgba(0,102,255,0.5), 0 0 60px rgba(0,102,255,0.2);
+  --border: rgba(0,229,255,0.15);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--cyan); border-radius:2px; }
+
+/* ── CANVAS BACKGROUND ── */
+#particles-canvas {
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+}
+
+/* ── NAV ── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  padding:20px 0;
+  background: rgba(5,5,8,0.85);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(0,229,255,0.08);
+  transition: all 0.3s;
+}
+nav.scrolled {
+  padding:14px 0;
+  border-bottom-color: rgba(0,229,255,0.15);
+}
+.nav-inner {
+  max-width:1280px; margin:0 auto; padding:0 32px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.logo {
+  font-family:'Orbitron', monospace;
+  font-size:22px; font-weight:900;
+  color:var(--white); letter-spacing:2px;
+  text-decoration:none;
+}
+.logo span { color:var(--cyan); text-shadow: var(--glow-cyan); }
+.nav-links {
+  display:flex; gap:36px; list-style:none;
+}
+.nav-links a {
+  color:var(--gray); font-size:14px; font-weight:500;
+  text-decoration:none; letter-spacing:0.5px;
+  transition:color 0.2s; position:relative;
+}
+.nav-links a::after {
+  content:''; position:absolute; bottom:-4px; left:0;
+  width:0; height:1px; background:var(--cyan);
+  transition:width 0.3s; box-shadow:var(--glow-cyan);
+}
+.nav-links a:hover { color:var(--cyan); }
+.nav-links a:hover::after { width:100%; }
+.nav-cta {
+  display:flex; align-items:center; gap:16px;
+}
+.btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:12px 28px; border-radius:6px;
+  font-size:14px; font-weight:600; letter-spacing:0.5px;
+  text-decoration:none; cursor:pointer; border:none;
+  transition:all 0.3s; font-family:'Inter',sans-serif;
+}
+.btn-outline {
+  background:transparent;
+  border:1px solid rgba(0,229,255,0.4);
+  color:var(--cyan);
+}
+.btn-outline:hover {
+  background:rgba(0,229,255,0.08);
+  border-color:var(--cyan);
+  box-shadow:var(--glow-cyan);
+}
+.btn-primary {
+  background:linear-gradient(135deg, #0066ff, #00e5ff);
+  color:var(--black);
+  font-weight:700;
+  box-shadow: 0 4px 24px rgba(0,229,255,0.3);
+}
+.btn-primary:hover {
+  transform:translateY(-2px);
+  box-shadow: 0 8px 40px rgba(0,229,255,0.5);
+}
+.hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; }
+.hamburger span { width:24px; height:2px; background:var(--white); }
+
+/* ── HERO ── */
+.hero {
+  position:relative; min-height:100vh;
+  display:flex; align-items:center;
+  overflow:hidden;
+}
+.hero-bg {
+  position:absolute; inset:0; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,102,255,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,229,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 60%, rgba(124,58,237,0.08) 0%, transparent 60%);
+}
+.hero-grid {
+  position:absolute; inset:0; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.04) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-scanline {
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,229,255,0.012) 3px, rgba(0,229,255,0.012) 4px
+  );
+}
+.hero-content {
+  position:relative; z-index:2;
+  max-width:1280px; margin:0 auto; padding:140px 32px 80px;
+  display:grid; grid-template-columns:1fr 480px; gap:80px; align-items:center;
+}
+.hero-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 16px; border-radius:4px;
+  background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2);
+  font-size:12px; font-weight:700; letter-spacing:3px;
+  text-transform:uppercase; color:var(--cyan);
+  margin-bottom:24px;
+}
+.hero-tag .dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--cyan); box-shadow:var(--glow-cyan);
+  animation:blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.hero h1 {
+  font-family:'Orbitron', monospace;
+  font-size:clamp(36px,5vw,64px);
+  font-weight:900; line-height:1.05;
+  letter-spacing:-1px; margin-bottom:24px;
+}
+.hero h1 .line1 { display:block; color:var(--white); }
+.hero h1 .line2 {
+  display:block;
+  background:linear-gradient(90deg, var(--cyan) 0%, var(--blue) 50%, var(--purple) 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  filter:drop-shadow(0 0 30px rgba(0,229,255,0.4));
+}
+.hero-sub {
+  font-size:18px; color:var(--gray); line-height:1.7;
+  max-width:520px; margin-bottom:40px;
+}
+.hero-sub strong { color:var(--light); font-weight:600; }
+.hero-actions { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:56px; }
+.hero-stats {
+  display:flex; gap:48px;
+  padding-top:32px; border-top:1px solid rgba(255,255,255,0.06);
+}
+.stat-val {
+  font-family:'Orbitron',monospace; font-size:36px; font-weight:900;
+  color:var(--cyan); line-height:1;
+  text-shadow:var(--glow-cyan);
+}
+.stat-lbl { font-size:13px; color:var(--gray); margin-top:4px; }
+
+/* Hero panel */
+.hero-panel {
+  background:rgba(10,11,16,0.8);
+  border:1px solid rgba(0,229,255,0.15);
+  border-radius:12px; padding:36px;
+  backdrop-filter:blur(20px);
+  box-shadow: 0 0 80px rgba(0,102,255,0.1), inset 0 0 40px rgba(0,229,255,0.02);
+  position:relative; overflow:hidden;
+}
+.hero-panel::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--cyan), var(--blue), transparent);
+}
+.hero-panel h3 {
+  font-family:'Orbitron',monospace; font-size:16px; font-weight:700;
+  color:var(--white); letter-spacing:1px; margin-bottom:6px;
+}
+.hero-panel > p { font-size:13px; color:var(--gray); margin-bottom:24px; }
+
+.field { margin-bottom:16px; }
+.field label { display:block; font-size:12px; color:var(--gray); margin-bottom:6px; letter-spacing:0.5px; text-transform:uppercase; }
+.field input, .field select {
+  width:100%; padding:12px 16px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:6px; color:var(--white); font-size:14px; font-family:'Inter',sans-serif;
+  transition:border-color 0.2s;
+  appearance:none; -webkit-appearance:none;
+}
+.field input:focus, .field select:focus {
+  outline:none; border-color:var(--cyan);
+  box-shadow:0 0 0 2px rgba(0,229,255,0.1);
+}
+.field select option { background:var(--dark2); }
+.field input::placeholder { color:rgba(255,255,255,0.2); }
+.panel-btn {
+  width:100%; padding:14px; border-radius:6px;
+  background:linear-gradient(135deg, var(--blue), var(--cyan));
+  color:var(--black); font-size:15px; font-weight:700;
+  letter-spacing:0.5px; cursor:pointer; border:none;
+  font-family:'Inter',sans-serif;
+  box-shadow:0 4px 30px rgba(0,229,255,0.3);
+  transition:all 0.3s;
+}
+.panel-btn:hover { box-shadow:0 8px 50px rgba(0,229,255,0.5); transform:translateY(-2px); }
+
+/* ── TRUSTED STRIP ── */
+.trust-strip {
+  position:relative; z-index:2;
+  padding:28px 0;
+  border-top:1px solid rgba(255,255,255,0.05);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  background:rgba(10,11,16,0.6);
+  overflow:hidden;
+}
+.trust-inner {
+  max-width:1280px; margin:0 auto; padding:0 32px;
+  display:flex; align-items:center; gap:48px;
+}
+.trust-label {
+  font-size:11px; font-weight:700; letter-spacing:3px;
+  text-transform:uppercase; color:var(--gray);
+  white-space:nowrap; flex-shrink:0;
+}
+.trust-logos {
+  display:flex; align-items:center; gap:40px;
+  overflow-x:auto; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.trust-logos::-webkit-scrollbar { display:none; }
+.trust-logo {
+  font-family:'Orbitron',monospace; font-size:13px; font-weight:700;
+  letter-spacing:2px; color:rgba(255,255,255,0.25);
+  white-space:nowrap; transition:color 0.3s;
+  cursor:default;
+}
+.trust-logo:hover { color:rgba(0,229,255,0.6); }
+
+/* ── SECTION BASE ── */
+section { position:relative; z-index:2; padding:100px 0; }
+.container { max-width:1280px; margin:0 auto; padding:0 32px; }
+
+.sec-tag {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+  color:var(--cyan); margin-bottom:16px;
+}
+.sec-tag::before {
+  content:''; width:20px; height:1px;
+  background:var(--cyan); box-shadow:var(--glow-cyan);
+}
+.sec-title {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(28px,3.5vw,44px); font-weight:900;
+  line-height:1.1; margin-bottom:16px;
+}
+.sec-sub { font-size:17px; color:var(--gray); line-height:1.7; max-width:560px; }
+
+/* ── FEATURES ── */
+.features { background:var(--dark); }
+.features-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  border:1px solid rgba(0,229,255,0.08);
+  border-radius:12px; overflow:hidden; margin-top:64px;
+}
+.feat {
+  background:rgba(10,11,16,0.9); padding:40px 32px;
+  border-right:1px solid rgba(0,229,255,0.08);
+  transition:background 0.3s;
+}
+.feat:last-child { border-right:none; }
+.feat:hover { background:rgba(0,102,255,0.05); }
+.feat-icon {
+  width:48px; height:48px; border-radius:10px;
+  background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.15);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:20px;
+  box-shadow:var(--glow-cyan);
+}
+.feat-icon svg { width:22px; height:22px; stroke:var(--cyan); fill:none; stroke-width:2; }
+.feat h3 { font-size:16px; font-weight:700; margin-bottom:10px; }
+.feat p { font-size:14px; color:var(--gray); line-height:1.6; }
+
+/* ── PRODUCTS ── */
+.products-header {
+  display:flex; justify-content:space-between; align-items:flex-end;
+  margin-bottom:48px; flex-wrap:wrap; gap:24px;
+}
+.products-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:2px;
+  background:rgba(0,229,255,0.06); border-radius:12px; overflow:hidden;
+}
+.prod-card {
+  background:var(--dark); padding:0; position:relative;
+  overflow:hidden; cursor:pointer;
+  transition:transform 0.4s;
+}
+.prod-card:hover { transform:scale(1.01); z-index:2; }
+.prod-img {
+  height:220px; display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.prod-card:nth-child(1) .prod-img { background:linear-gradient(135deg, #0a1628 0%, #001a40 50%, #0033a0 100%); }
+.prod-card:nth-child(2) .prod-img { background:linear-gradient(135deg, #080d1a 0%, #0a2040 50%, #003380 100%); }
+.prod-card:nth-child(3) .prod-img { background:linear-gradient(135deg, #0d0a1a 0%, #200a40 50%, #4a0080 100%); }
+.prod-card:nth-child(4) .prod-img { background:linear-gradient(135deg, #0a1a10 0%, #003320 50%, #006640 100%); }
+.prod-card:nth-child(5) .prod-img { background:linear-gradient(135deg, #1a0a08 0%, #401a00 50%, #803300 100%); }
+.prod-card:nth-child(6) .prod-img { background:linear-gradient(135deg, #1a1a08 0%, #333300 50%, #666600 100%); }
+
+.prod-gfx {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.led-grid {
+  display:grid; grid-template-columns:repeat(8,1fr); gap:3px;
+  opacity:0.6; transition:opacity 0.3s;
+}
+.prod-card:hover .led-grid { opacity:1; }
+.led-dot {
+  width:10px; height:10px; border-radius:2px;
+  animation:ledFlicker 2s infinite;
+}
+@keyframes ledFlicker {
+  0%,100%{opacity:1} 50%{opacity:0.4} 75%{opacity:0.8}
+}
+.prod-badge {
+  position:absolute; top:16px; left:16px;
+  padding:4px 12px; border-radius:4px;
+  font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3);
+  color:var(--cyan);
+}
+.prod-body { padding:24px; }
+.prod-body h3 { font-size:17px; font-weight:700; margin-bottom:8px; }
+.prod-body p { font-size:13px; color:var(--gray); line-height:1.6; margin-bottom:16px; }
+.prod-link {
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:13px; font-weight:600; color:var(--cyan);
+  text-decoration:none; transition:gap 0.2s;
+}
+.prod-link:hover { gap:10px; }
+.prod-link svg { width:14px; height:14px; stroke:var(--cyan); fill:none; stroke-width:2.5; }
+
+/* ── VIDEO SECTION ── */
+.video-sec {
+  background:var(--dark);
+  padding:100px 0;
+}
+.video-layout {
+  display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center;
+}
+.video-frame {
+  position:relative; border-radius:12px; overflow:hidden;
+  border:1px solid rgba(0,229,255,0.2);
+  box-shadow:0 0 80px rgba(0,102,255,0.2), 0 0 160px rgba(0,102,255,0.08);
+  aspect-ratio:16/9;
+}
+.video-frame iframe { width:100%; height:100%; border:none; }
+.video-glow {
+  position:absolute; inset:-1px;
+  border-radius:12px; pointer-events:none;
+  background:linear-gradient(135deg, rgba(0,229,255,0.1), transparent 50%, rgba(0,102,255,0.1));
+}
+.video-text h2 { margin-bottom:20px; }
+.video-text p { color:var(--gray); font-size:16px; line-height:1.7; margin-bottom:32px; }
+.video-stats { display:flex; flex-direction:column; gap:20px; }
+.vstat {
+  display:flex; align-items:center; gap:16px;
+  padding:16px 20px;
+  background:rgba(0,229,255,0.04); border:1px solid rgba(0,229,255,0.1);
+  border-radius:8px;
+}
+.vstat-num {
+  font-family:'Orbitron',monospace; font-size:28px; font-weight:900;
+  color:var(--cyan); line-height:1; white-space:nowrap;
+  text-shadow:var(--glow-cyan);
+}
+.vstat-txt { font-size:13px; color:var(--gray); }
+
+/* ── CLIENTS ── */
+.clients-sec { background:var(--black); }
+.clients-logos {
+  display:grid; grid-template-columns:repeat(6,1fr); gap:2px;
+  margin-top:56px; margin-bottom:80px;
+}
+.cli-card {
+  background:rgba(10,11,16,0.9);
+  border:1px solid rgba(255,255,255,0.04);
+  padding:28px 20px;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  transition:all 0.3s; cursor:default;
+}
+.cli-card:hover {
+  background:rgba(0,229,255,0.04);
+  border-color:rgba(0,229,255,0.2);
+  box-shadow:var(--glow-cyan);
+}
+.cli-name {
+  font-family:'Orbitron',monospace; font-size:13px; font-weight:700;
+  letter-spacing:2px; color:rgba(255,255,255,0.35);
+  transition:color 0.3s;
+}
+.cli-card:hover .cli-name { color:rgba(0,229,255,0.8); }
+.cli-icon { width:32px; height:32px; opacity:0.3; transition:opacity 0.3s; }
+.cli-card:hover .cli-icon { opacity:0.7; }
+
+/* ── TESTIMONIALS ── */
+.testi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:56px; }
+.testi {
+  background:rgba(10,11,16,0.9); padding:32px;
+  border:1px solid rgba(255,255,255,0.04);
+  position:relative; overflow:hidden;
+  transition:border-color 0.3s;
+}
+.testi:hover { border-color:rgba(0,229,255,0.15); }
+.testi::before {
+  content:'"'; position:absolute; top:16px; right:24px;
+  font-size:80px; font-family:serif; color:rgba(0,229,255,0.06);
+  line-height:1;
+}
+.testi-stars { display:flex; gap:4px; margin-bottom:16px; }
+.testi-stars svg { width:14px; height:14px; fill:#fbbf24; }
+.testi p { font-size:14px; color:var(--gray); line-height:1.7; margin-bottom:20px; font-style:italic; }
+.testi-author { display:flex; align-items:center; gap:12px; }
+.testi-av {
+  width:38px; height:38px; border-radius:50%;
+  background:linear-gradient(135deg, var(--blue), var(--cyan));
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:var(--black);
+  flex-shrink:0;
+}
+.testi-name { font-size:14px; font-weight:600; }
+.testi-role { font-size:12px; color:var(--gray); }
+
+/* ── CTA BANNER ── */
+.cta-band {
+  position:relative; overflow:hidden;
+  background:linear-gradient(135deg, #000820 0%, #000d30 50%, #000820 100%);
+  padding:100px 0;
+  border-top:1px solid rgba(0,229,255,0.1);
+  border-bottom:1px solid rgba(0,229,255,0.1);
+}
+.cta-bg-glow {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:600px; height:600px; border-radius:50%;
+  background:radial-gradient(ellipse, rgba(0,102,255,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.cta-inner { position:relative; z-index:2; text-align:center; }
+.cta-inner h2 { font-size:clamp(32px,4vw,52px); margin-bottom:16px; }
+.cta-inner p { font-size:18px; color:var(--gray); margin-bottom:40px; max-width:500px; margin-left:auto; margin-right:auto; }
+.cta-btns { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+.btn-ghost {
+  background:transparent; border:1px solid rgba(255,255,255,0.2); color:var(--white);
+  padding:14px 32px; border-radius:6px; font-size:15px; font-weight:600;
+  text-decoration:none; transition:all 0.3s;
+}
+.btn-ghost:hover { border-color:var(--white); background:rgba(255,255,255,0.05); }
+.btn-glow {
+  background:linear-gradient(135deg, var(--blue), var(--cyan));
+  color:var(--black); padding:14px 36px; border-radius:6px;
+  font-size:15px; font-weight:700; text-decoration:none;
+  box-shadow:0 4px 30px rgba(0,229,255,0.35);
+  transition:all 0.3s;
+}
+.btn-glow:hover { box-shadow:0 8px 60px rgba(0,229,255,0.5); transform:translateY(-2px); }
+
+/* ── CONTACT ── */
+.contact-sec { background:var(--dark); }
+.contact-layout { display:grid; grid-template-columns:1fr 1fr; gap:80px; }
+.contact-info h2 { margin-bottom:16px; }
+.contact-info > p { color:var(--gray); font-size:16px; line-height:1.7; margin-bottom:40px; }
+.cinfo-item {
+  display:flex; align-items:center; gap:16px;
+  padding:16px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.cinfo-icon {
+  width:40px; height:40px; border-radius:8px; flex-shrink:0;
+  background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.15);
+  display:flex; align-items:center; justify-content:center;
+}
+.cinfo-icon svg { width:18px; height:18px; stroke:var(--cyan); fill:none; stroke-width:2; }
+.cinfo-lbl { font-size:11px; color:var(--gray); text-transform:uppercase; letter-spacing:1px; }
+.cinfo-val { font-size:15px; font-weight:600; }
+
+.contact-form {
+  background:rgba(5,5,8,0.6); border:1px solid rgba(0,229,255,0.1);
+  border-radius:12px; padding:40px; position:relative; overflow:hidden;
+}
+.contact-form::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--blue), var(--cyan), transparent);
+}
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.field textarea {
+  width:100%; padding:12px 16px; min-height:120px; resize:vertical;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:6px; color:var(--white); font-size:14px;
+  font-family:'Inter',sans-serif; transition:border-color 0.2s;
+}
+.field textarea:focus { outline:none; border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,0.1); }
+.field textarea::placeholder { color:rgba(255,255,255,0.2); }
+.submit-btn {
+  width:100%; padding:16px; border-radius:6px; cursor:pointer; border:none;
+  background:linear-gradient(135deg, var(--blue), var(--cyan));
+  color:var(--black); font-size:15px; font-weight:700;
+  font-family:'Inter',sans-serif; letter-spacing:0.5px;
+  box-shadow:0 4px 30px rgba(0,229,255,0.3); transition:all 0.3s;
+}
+.submit-btn:hover { box-shadow:0 8px 50px rgba(0,229,255,0.5); transform:translateY(-2px); }
+
+/* ── FOOTER ── */
+footer {
+  background:var(--black); border-top:1px solid rgba(255,255,255,0.05);
+  padding:64px 0 32px;
+}
+.footer-top {
+  display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:48px;
+  margin-bottom:48px;
+}
+.footer-brand .logo { font-size:20px; margin-bottom:16px; display:inline-block; }
+.footer-brand p { font-size:13px; color:var(--gray); line-height:1.7; }
+.footer-col h4 { font-size:13px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--white); margin-bottom:20px; }
+.footer-col ul { list-style:none; }
+.footer-col li { margin-bottom:10px; }
+.footer-col a { font-size:13px; color:var(--gray); text-decoration:none; transition:color 0.2s; }
+.footer-col a:hover { color:var(--cyan); }
+.footer-bottom {
+  display:flex; justify-content:space-between; align-items:center;
+  padding-top:32px; border-top:1px solid rgba(255,255,255,0.05);
+  flex-wrap:wrap; gap:16px;
+}
+.footer-bottom p { font-size:12px; color:var(--gray); }
+.footer-badge {
+  font-family:'Orbitron',monospace; font-size:10px; font-weight:700;
+  letter-spacing:2px; color:rgba(0,229,255,0.4); text-transform:uppercase;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px) {
+  .hero-content { grid-template-columns:1fr; gap:48px; }
+  .hero-panel { max-width:480px; }
+  .features-grid { grid-template-columns:repeat(2,1fr); }
+  .products-grid { grid-template-columns:repeat(2,1fr); }
+  .clients-logos { grid-template-columns:repeat(3,1fr); }
+  .video-layout { grid-template-columns:1fr; gap:48px; }
+  .footer-top { grid-template-columns:1fr 1fr; gap:32px; }
+}
+@media(max-width:768px) {
+  .nav-links, .nav-cta { display:none; }
+  .hamburger { display:flex; }
+  .hero-stats { flex-wrap:wrap; gap:24px; }
+  .features-grid { grid-template-columns:1fr; }
+  .products-grid { grid-template-columns:1fr; }
+  .testi-grid { grid-template-columns:1fr; }
+  .contact-layout { grid-template-columns:1fr; }
+  .form-row { grid-template-columns:1fr; }
+  .clients-logos { grid-template-columns:repeat(2,1fr); }
+  .footer-top { grid-template-columns:1fr; }
+  .trust-inner { flex-direction:column; align-items:flex-start; gap:20px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="#" class="logo">TECNO<span>GROUP</span></a>
+    <ul class="nav-links">
+      <li><a href="#productos">Productos</a></li>
+      <li><a href="#proyectos">Proyectos</a></li>
+      <li><a href="#clientes">Clientes</a></li>
+      <li><a href="#nosotros">Nosotros</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="tel:+56954491032" class="btn btn-outline">+56 9 5449 1032</a>
+      <a href="#contacto" class="btn btn-primary">Cotizar Proyecto</a>
+    </div>
+    <div class="hamburger" onclick="document.querySelector('.nav-links').style.display='flex'">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-scanline"></div>
+  <div class="hero-content container" style="max-width:1280px;margin:0 auto;padding:140px 32px 80px;display:grid;grid-template-columns:1fr 480px;gap:80px;align-items:center;">
+    <div class="hero-left">
+      <div class="hero-tag">
+        <span class="dot"></span>
+        Integradores Digitales N°1 en Chile
+      </div>
+      <h1>
+        <span class="line1">TECNOLOGÍA LED</span>
+        <span class="line2">QUE TRANSFORMA</span>
+      </h1>
+      <p class="hero-sub">
+        Diseñamos e instalamos <strong>pantallas LED de clase mundial</strong> para retail, minería, corporativo y eventos. Más de <strong>500 proyectos</strong> en Chile y Latinoamérica.
+      </p>
+      <div class="hero-actions">
+        <a href="#contacto" class="btn btn-primary">
+          Solicitar Cotización Gratis
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#proyectos" class="btn btn-outline">Ver Proyectos</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="stat-val">500<span style="font-size:24px">+</span></div><div class="stat-lbl">Proyectos Instalados</div></div>
+        <div><div class="stat-val">15<span style="font-size:24px">+</span></div><div class="stat-lbl">Años en el Mercado</div></div>
+        <div><div class="stat-val">2</div><div class="stat-lbl">Países (CL y USA)</div></div>
+      </div>
+    </div>
+    <div class="hero-panel">
+      <h3>COTIZA TU PROYECTO</h3>
+      <p>Respuesta en menos de 24 horas hábiles</p>
+      <form id="quoteForm" onsubmit="submitForm(event)">
+        <div class="field"><label>Nombre completo</label><input type="text" placeholder="Tu nombre" required></div>
+        <div class="field"><label>Email corporativo</label><input type="email" placeholder="tu@empresa.com" required></div>
+        <div class="field"><label>Teléfono</label><input type="tel" placeholder="+56 9 1234 5678" required></div>
+        <div class="field">
+          <label>Tipo de proyecto</label>
+          <select>
+            <option value="">Selecciona...</option>
+            <option>Pantalla LED Interior</option>
+            <option>Pantalla LED Exterior</option>
+            <option>Videowall</option>
+            <option>Pantalla Transparente</option>
+            <option>Sala de Control</option>
+            <option>Arriendo para Evento</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <button type="submit" class="panel-btn">ENVIAR SOLICITUD →</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-inner">
+    <span class="trust-label">Confían en nosotros</span>
+    <div class="trust-logos">
+      <span class="trust-logo">NIKE</span>
+      <span class="trust-logo">CENCOSUD</span>
+      <span class="trust-logo">ENTEL</span>
+      <span class="trust-logo">KOMATSU</span>
+      <span class="trust-logo">FALABELLA</span>
+      <span class="trust-logo">CODELCO</span>
+      <span class="trust-logo">WALMART</span>
+      <span class="trust-logo">LATAM</span>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div class="sec-tag">Por qué elegirnos</div>
+    <h2 class="sec-title">Tecnología. Experiencia. Resultados.</h2>
+    <div class="features-grid">
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Tecnología de Vanguardia</h3>
+        <p>Distribuidores oficiales de Novastar, Leyard y Ray — las marcas más confiables del mundo en pantallas LED.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Garantía hasta 3 Años</h3>
+        <p>Todos nuestros proyectos incluyen garantía extendida y soporte técnico permanente en todo Chile.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        </div>
+        <h3>Instalación en 48 Hrs</h3>
+        <p>Equipos en stock y equipo técnico certificado listo para instalación express en cualquier punto del país.</p>
+      </div>
+      <div class="feat">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Ejecutivo Dedicado</h3>
+        <p>Un especialista asignado a tu proyecto desde la cotización hasta el servicio post-venta. Atención 24/7.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="productos">
+  <div class="container">
+    <div class="products-header">
+      <div>
+        <div class="sec-tag">Nuestros Productos</div>
+        <h2 class="sec-title">Soluciones LED para<br>Cada Necesidad</h2>
+      </div>
+      <a href="#contacto" class="btn btn-outline">Ver Catálogo Completo</a>
+    </div>
+    <div class="products-grid">
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">Más Popular</div>
+          <div class="prod-gfx">
+            <div class="led-grid" id="led1"></div>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Pantallas LED Interior</h3>
+          <p>Alta resolución para retail, corporativo y auditorios. Pitch desde 1.5mm hasta 4mm con brillos de hasta 1500 nits.</p>
+          <a href="#contacto" class="prod-link">Cotizar ahora <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">Exterior</div>
+          <div class="prod-gfx">
+            <svg viewBox="0 0 200 160" style="width:100%;height:100%;opacity:0.4">
+              <rect x="20" y="20" width="160" height="120" rx="4" fill="none" stroke="#00e5ff" stroke-width="1"/>
+              <rect x="30" y="30" width="60" height="48" rx="2" fill="rgba(0,229,255,0.15)" stroke="#0066ff" stroke-width="0.5"/>
+              <rect x="100" y="30" width="70" height="48" rx="2" fill="rgba(0,102,255,0.15)" stroke="#0066ff" stroke-width="0.5"/>
+              <rect x="30" y="90" width="140" height="40" rx="2" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="0.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Pantallas LED Outdoor</h3>
+          <p>Resistentes a lluvia, viento y sol. Ideales para fachadas, vía pública y estadios. Brillo de hasta 8000 nits.</p>
+          <a href="#contacto" class="prod-link">Cotizar ahora <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">Innovación</div>
+          <div class="prod-gfx">
+            <svg viewBox="0 0 200 160" style="width:100%;height:100%;opacity:0.5">
+              <defs><linearGradient id="tg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.6"/><stop offset="100%" stop-color="#00e5ff" stop-opacity="0.6"/></linearGradient></defs>
+              <rect x="30" y="20" width="140" height="120" rx="4" fill="url(#tg)" opacity="0.3"/>
+              <rect x="30" y="20" width="140" height="120" rx="4" fill="none" stroke="#7c3aed" stroke-width="1"/>
+              <text x="100" y="90" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="11" font-family="monospace">TRANSPARENT</text>
+            </svg>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Pantallas Transparentes</h3>
+          <p>Transparencia de hasta 80%. Perfectas para vitrinas, arquitectura y experiencias inmersivas de marca.</p>
+          <a href="#contacto" class="prod-link">Cotizar ahora <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">Control</div>
+          <div class="prod-gfx">
+            <svg viewBox="0 0 200 160" style="width:100%;height:100%;opacity:0.5">
+              <rect x="20" y="40" width="160" height="80" rx="6" fill="rgba(0,102,255,0.1)" stroke="#0066ff" stroke-width="1"/>
+              <circle cx="50" cy="80" r="20" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
+              <circle cx="50" cy="80" r="10" fill="rgba(0,229,255,0.3)"/>
+              <rect x="90" y="55" width="70" height="8" rx="2" fill="rgba(0,229,255,0.3)"/>
+              <rect x="90" y="72" width="50" height="8" rx="2" fill="rgba(0,102,255,0.3)"/>
+              <rect x="90" y="89" width="60" height="8" rx="2" fill="rgba(124,58,237,0.3)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Sistemas de Control Novastar</h3>
+          <p>Controladores MCTRL profesionales para gestión centralizada de múltiples pantallas desde un solo punto.</p>
+          <a href="#contacto" class="prod-link">Ver especificaciones <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">24/7</div>
+          <div class="prod-gfx">
+            <svg viewBox="0 0 200 160" style="width:80%;height:80%;opacity:0.5">
+              <rect x="10" y="10" width="80" height="60" rx="3" fill="rgba(255,107,53,0.15)" stroke="#ff6b35" stroke-width="1"/>
+              <rect x="100" y="10" width="90" height="60" rx="3" fill="rgba(0,229,255,0.15)" stroke="#00e5ff" stroke-width="1"/>
+              <rect x="10" y="80" width="180" height="70" rx="3" fill="rgba(0,102,255,0.1)" stroke="#0066ff" stroke-width="1"/>
+              <text x="100" y="122" text-anchor="middle" fill="rgba(0,229,255,0.5)" font-size="9" font-family="monospace">SALA DE CONTROL</text>
+            </svg>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Salas de Control y Monitoreo</h3>
+          <p>Diseño e implementación de NOCs y SOCs con videowalls de alta disponibilidad para operaciones 24/7.</p>
+          <a href="#contacto" class="prod-link">Ver proyectos <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+      <div class="prod-card">
+        <div class="prod-img">
+          <div class="prod-badge">Arriendo</div>
+          <div class="prod-gfx">
+            <svg viewBox="0 0 200 160" style="width:80%;height:80%;opacity:0.5">
+              <polygon points="100,20 160,140 40,140" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="1.5"/>
+              <circle cx="100" cy="85" r="20" fill="rgba(0,229,255,0.15)" stroke="#00e5ff" stroke-width="1"/>
+              <text x="100" y="90" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="monospace">EVENTO</text>
+            </svg>
+          </div>
+        </div>
+        <div class="prod-body">
+          <h3>Inmagic Rental — Arriendo</h3>
+          <p>Pantallas LED en arriendo para eventos, conciertos, ferias y activaciones de marca. Montaje y desmontaje incluido.</p>
+          <a href="#contacto" class="prod-link">Cotizar arriendo <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEO SECTION -->
+<section class="video-sec" id="proyectos">
+  <div class="container">
+    <div class="video-layout">
+      <div class="video-frame">
+        <iframe
+          src="https://www.youtube.com/embed/UUTecnogroup?autoplay=0&rel=0"
+          title="Tecnogroup — Proyectos LED Chile"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+        <div class="video-glow"></div>
+      </div>
+      <div class="video-text">
+        <div class="sec-tag">Nuestro Trabajo</div>
+        <h2 class="sec-title">Ve la Tecnología en Acción</h2>
+        <p>Desde pantallas en el retail más grande de Chile hasta salas de control en minería de clase mundial — cada proyecto cuenta nuestra historia.</p>
+        <div class="video-stats">
+          <div class="vstat">
+            <div class="vstat-num">500+</div>
+            <div class="vstat-txt">Proyectos instalados en Chile y Latinoamérica</div>
+          </div>
+          <div class="vstat">
+            <div class="vstat-num">98%</div>
+            <div class="vstat-txt">Clientes que nos recomiendan después del proyecto</div>
+          </div>
+          <div class="vstat">
+            <div class="vstat-num">48h</div>
+            <div class="vstat-txt">Tiempo promedio de instalación express</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLIENTS -->
+<section class="clients-sec" id="clientes">
+  <div class="container">
+    <div class="sec-tag">Clientes</div>
+    <h2 class="sec-title">Las Mejores Marcas de Chile<br>Confían en Tecnogroup</h2>
+    <div class="clients-logos">
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><path d="M4 28 C15 8, 30 4, 36 16 C26 18, 14 24, 4 28Z" fill="white"/></svg>
+        <span class="cli-name">NIKE</span>
+      </div>
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="14" width="32" height="12" rx="2" stroke="white" stroke-width="1.5"/><text x="20" y="24" text-anchor="middle" fill="white" font-size="7" font-family="Arial" font-weight="800">CSD</text></svg>
+        <span class="cli-name">CENCOSUD</span>
+      </div>
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" stroke-width="1.5"/><circle cx="20" cy="20" r="6" fill="white" opacity="0.3"/></svg>
+        <span class="cli-name">ENTEL</span>
+      </div>
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><polygon points="20,5 35,32 5,32" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.1)"/></svg>
+        <span class="cli-name">FALABELLA</span>
+      </div>
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><rect x="5" y="10" width="30" height="20" rx="3" stroke="white" stroke-width="1.5"/><line x1="5" y1="20" x2="35" y2="20" stroke="white" stroke-width="0.5" opacity="0.5"/></svg>
+        <span class="cli-name">KOMATSU</span>
+      </div>
+      <div class="cli-card">
+        <svg class="cli-icon" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="14" stroke="white" stroke-width="1.5"/><path d="M12 20h16M20 12v16" stroke="white" stroke-width="1.5"/></svg>
+        <span class="cli-name">CODELCO</span>
+      </div>
+    </div>
+
+    <div class="testi-grid">
+      <div class="testi">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p>"La pantalla LED en nuestra tienda aumentó el tiempo de permanencia de clientes en un 40%. El equipo de Tecnogroup fue profesional en cada etapa del proceso."</p>
+        <div class="testi-author">
+          <div class="testi-av">CR</div>
+          <div><div class="testi-name">Carlos Ramírez</div><div class="testi-role">Gerente de Marketing, Retail</div></div>
+        </div>
+      </div>
+      <div class="testi">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p>"Implementaron nuestra sala de control 24/7 con un videowall impecable. Dos años sin fallas. El soporte técnico responde en menos de 2 horas."</p>
+        <div class="testi-author">
+          <div class="testi-av">MV</div>
+          <div><div class="testi-name">María Valdés</div><div class="testi-role">Directora de Operaciones, Minería</div></div>
+        </div>
+      </div>
+      <div class="testi">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p>"El arriendo de pantallas para nuestro evento fue perfecto. Montaje en 4 horas, calidad de imagen espectacular y soporte técnico en sitio todo el día."</p>
+        <div class="testi-author">
+          <div class="testi-av">JP</div>
+          <div><div class="testi-name">Jorge Pérez</div><div class="testi-role">Productor de Eventos, Agencia BTL</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="cta-band">
+  <div class="cta-bg-glow"></div>
+  <div class="container cta-inner">
+    <div class="sec-tag" style="justify-content:center">Siguiente Paso</div>
+    <h2 class="sec-title">¿Listo para Iluminar<br>tu Espacio?</h2>
+    <p>Agenda una llamada con un especialista y recibe una propuesta a medida en menos de 24 horas. Sin compromiso.</p>
+    <div class="cta-btns">
+      <a href="#contacto" class="btn-glow">Agendar Llamada Gratis</a>
+      <a href="tel:+56954491032" class="btn-ghost">+56 9 5449 1032</a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact-sec" id="contacto">
+  <div class="container">
+    <div class="contact-layout">
+      <div class="contact-info">
+        <div class="sec-tag">Contacto</div>
+        <h2 class="sec-title">Hablemos de tu Proyecto</h2>
+        <p>Nuestro equipo de especialistas está disponible para asesorarte y diseñar la solución LED perfecta para tu negocio.</p>
+        <div class="cinfo-item">
+          <div class="cinfo-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+          <div><div class="cinfo-lbl">Teléfono</div><div class="cinfo-val">+56 9 5449 1032</div></div>
+        </div>
+        <div class="cinfo-item">
+          <div class="cinfo-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div><div class="cinfo-lbl">Email</div><div class="cinfo-val">contacto@tecnogroup.cl</div></div>
+        </div>
+        <div class="cinfo-item">
+          <div class="cinfo-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+          <div><div class="cinfo-lbl">Oficina</div><div class="cinfo-val">Santiago, Chile</div></div>
+        </div>
+        <div class="cinfo-item">
+          <div class="cinfo-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg></div>
+          <div><div class="cinfo-lbl">Horario</div><div class="cinfo-val">Lun–Vie 9:00 – 18:00</div></div>
+        </div>
+      </div>
+      <div class="contact-form">
+        <h3 style="font-family:'Orbitron',monospace;font-size:16px;letter-spacing:1px;margin-bottom:6px;">ENVÍANOS UN MENSAJE</h3>
+        <p style="font-size:13px;color:var(--gray);margin-bottom:24px;">Respondemos en menos de 24 horas hábiles</p>
+        <form onsubmit="submitContact(event)">
+          <div class="form-row">
+            <div class="field"><label>Nombre</label><input type="text" placeholder="Tu nombre" required></div>
+            <div class="field"><label>Teléfono</label><input type="tel" placeholder="+56 9 xxxx xxxx"></div>
+          </div>
+          <div class="field"><label>Email</label><input type="email" placeholder="tu@empresa.com" required></div>
+          <div class="field"><label>Mensaje</label><textarea placeholder="Cuéntanos sobre tu proyecto..."></textarea></div>
+          <button type="submit" class="submit-btn">ENVIAR MENSAJE →</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#" class="logo" style="font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:white;letter-spacing:2px;text-decoration:none;">TECNO<span style="color:#00e5ff;">GROUP</span></a>
+        <p style="margin-top:16px;font-size:13px;color:var(--gray);line-height:1.7;">Integradores digitales especializados en pantallas LED, sistemas de control y señalización digital para Chile y Latinoamérica.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Productos</h4>
+        <ul>
+          <li><a href="#contacto">Pantallas LED Interior</a></li>
+          <li><a href="#contacto">Pantallas LED Outdoor</a></li>
+          <li><a href="#contacto">Pantallas Transparentes</a></li>
+          <li><a href="#contacto">Videowalls</a></li>
+          <li><a href="#contacto">Salas de Control</a></li>
+          <li><a href="#contacto">Arriendo Inmagic</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Empresa</h4>
+        <ul>
+          <li><a href="#nosotros">Sobre Nosotros</a></li>
+          <li><a href="#proyectos">Proyectos</a></li>
+          <li><a href="#clientes">Clientes</a></li>
+          <li><a href="#contacto">Trabaja con Nosotros</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <ul>
+          <li><a href="tel:+56954491032">+56 9 5449 1032</a></li>
+          <li><a href="mailto:contacto@tecnogroup.cl">contacto@tecnogroup.cl</a></li>
+          <li><a href="#">Santiago, Chile</a></li>
+          <li><a href="https://www.tecnogroup.cl" target="_blank">www.tecnogroup.cl</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 Tecnogroup. Todos los derechos reservados.</p>
+      <span class="footer-badge">Diseño propuesto por PROSPERA.AI</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// LED grid for product card 1
+const colors = ['#00e5ff','#0066ff','#ffffff','#7c3aed','#00e5ff','#ffffff'];
+const led1 = document.getElementById('led1');
+for(let i = 0; i < 48; i++) {
+  const d = document.createElement('div');
+  d.className = 'led-dot';
+  d.style.background = colors[Math.floor(Math.random() * colors.length)];
+  d.style.animationDelay = Math.random() * 2 + 's';
+  d.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+  led1.appendChild(d);
+}
+
+// Particles
+const canvas = document.getElementById('particles-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for(let i = 0; i < 60; i++) {
+  particles.push({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    size: Math.random() * 1.5 + 0.5,
+    alpha: Math.random() * 0.4 + 0.1,
+    color: Math.random() > 0.6 ? '#00e5ff' : '#0066ff'
+  });
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if(p.x < 0) p.x = canvas.width;
+    if(p.x > canvas.width) p.x = 0;
+    if(p.y < 0) p.y = canvas.height;
+    if(p.y > canvas.height) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.alpha;
+    ctx.fill();
+  });
+  particles.forEach((p, i) => {
+    particles.slice(i+1).forEach(q => {
+      const d = Math.hypot(p.x-q.x, p.y-q.y);
+      if(d < 120) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+        ctx.strokeStyle = '#00e5ff';
+        ctx.globalAlpha = (1 - d/120) * 0.08;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    });
+  });
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// Nav scroll
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// Form handlers
+function submitForm(e) {
+  e.preventDefault();
+  alert('✅ Solicitud enviada. Te contactaremos en menos de 24 horas.');
+  e.target.reset();
+}
+function submitContact(e) {
+  e.preventDefault();
+  alert('✅ Mensaje enviado. Te responderemos pronto.');
+  e.target.reset();
+}
+</script>
+</body>
+</html>
