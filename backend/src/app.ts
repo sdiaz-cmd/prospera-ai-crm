@@ -9,6 +9,7 @@ import fs from 'fs';
 import { createSchema } from './database/schema';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { requireFeature } from './middleware/plan.middleware';
+import { authenticate } from './middleware/auth.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -96,25 +97,25 @@ app.use('/api/activities', activitiesRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/quotes', quotesRoutes);
 // ERP — Growth+
-app.use('/api/suppliers', requireFeature('erp'), suppliersRoutes);
-app.use('/api/products', requireFeature('erp'), productsRoutes);
-app.use('/api/invoices', requireFeature('erp'), invoicesRoutes);
+app.use('/api/suppliers', authenticate, requireFeature('erp'), suppliersRoutes);
+app.use('/api/products', authenticate, requireFeature('erp'), productsRoutes);
+app.use('/api/invoices', authenticate, requireFeature('erp'), invoicesRoutes);
 // Webhook
 app.use('/api/webhook', webhookRoutes);
 // Reports
 app.use('/api/reports', reportsRoutes);
 // Landing Pages — Growth+
-app.use('/api/landing-pages', requireFeature('landing'), landingRoutes);
+app.use('/api/landing-pages', authenticate, requireFeature('landing'), landingRoutes);
 // Marketing — Growth+
-app.use('/api/campaigns', requireFeature('marketing'), campaignsRoutes);
+app.use('/api/campaigns', authenticate, requireFeature('marketing'), campaignsRoutes);
 // AI — Enterprise
-app.use('/api/ai', requireFeature('ai'), aiRoutes);
+app.use('/api/ai', authenticate, requireFeature('ai'), aiRoutes);
 // Apollo
 app.use('/api/apollo', apolloRoutes);
 // Invitations
 app.use('/api/invitations', invitationsRoutes);
 // Inventory
-app.use('/api/inventory', requireFeature('erp'), inventoryRoutes);
+app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 
 // ─── Servir frontend compilado (modo compartido/público) ─────────────────────
 // Cuando el frontend está compilado (npm run build en /frontend),
