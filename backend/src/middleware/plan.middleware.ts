@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { get } from '../database/db';
 import { getPlan, PlanConfig } from '../config/plans';
+import { AuthPayload } from '../types';
 
 type FeatureKey = keyof PlanConfig['features'];
 
 export function requireFeature(feature: FeatureKey) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request & { user?: AuthPayload }, res: Response, next: NextFunction) => {
     const companyId = req.user?.companyId;
     if (!companyId) { res.status(401).json({ message: 'No autenticado' }); return; }
 

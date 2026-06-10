@@ -1,26 +1,32 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { InventoryService } from './inventory.service';
-import * as XLSX from 'xlsx';
+import { AuthenticatedRequest } from '../../types';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const XLSX = require('xlsx');
+
+interface MulterRequest extends AuthenticatedRequest {
+  file?: { buffer: Buffer; originalname: string; mimetype: string; size: number };
+}
 
 const service = new InventoryService();
 
-export async function getStock(req: Request, res: Response) {
+export async function getStock(req: AuthenticatedRequest, res: Response) {
   const companyId = req.user!.companyId;
   const { search, lowStock } = req.query;
   const data = service.getStock(companyId, { search: search as string, lowStock: lowStock === 'true' });
   res.json(data);
 }
 
-export async function getSummary(req: Request, res: Response) {
+export async function getSummary(req: AuthenticatedRequest, res: Response) {
   res.json(service.getSummary(req.user!.companyId));
 }
 
-export async function getMovements(req: Request, res: Response) {
+export async function getMovements(req: AuthenticatedRequest, res: Response) {
   const { productId, limit } = req.query;
   res.json(service.getMovements(req.user!.companyId, productId as string, Number(limit) || 50));
 }
 
-export async function addMovement(req: Request, res: Response) {
+export async function addMovement(req: AuthenticatedRequest, res: Response) {
   try {
     const result = service.addMovement(req.user!.companyId, req.user!.userId, req.body);
     res.json(result);
@@ -29,14 +35,14 @@ export async function addMovement(req: Request, res: Response) {
   }
 }
 
-export async function analyzeExcel(req: Request, res: Response) {
+export async function analyzeExcel(req: MulterRequest, res: Response) {
   try {
     if (!req.file) { res.status(400).json({ message: 'No se recibió archivo' }); return; }
 
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
+    const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' }) as Record<string, unknown>[];
 
     if (raw.length === 0) { res.status(400).json({ message: 'El archivo está vacío' }); return; }
 
@@ -61,7 +67,7 @@ export async function analyzeExcel(req: Request, res: Response) {
   }
 }
 
-export async function importExcel(req: Request, res: Response) {
+export async function importExcel(req: AuthenticatedRequest, res: Response) {
   try {
     const { items } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
