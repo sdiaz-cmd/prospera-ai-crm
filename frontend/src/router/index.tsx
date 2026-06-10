@@ -23,6 +23,7 @@ import { Quotes } from '@/pages/crm/Quotes';
 import { Products } from '@/pages/erp/Products';
 import { Suppliers } from '@/pages/erp/Suppliers';
 import { Invoices } from '@/pages/erp/Invoices';
+import { Inventory } from '@/pages/erp/Inventory';
 import { AIPage } from '@/pages/ai/AIPage';
 import { Marketing } from '@/pages/marketing/Marketing';
 import { LandingPages } from '@/pages/landing/LandingPages';
@@ -77,7 +78,7 @@ export const router = createBrowserRouter([
               { path: 'products', element: <Products /> },
               { path: 'suppliers', element: <Suppliers /> },
               { path: 'invoices', element: <Invoices /> },
-              { path: 'inventory', element: <ComingSoon title="Inventario" description="Movimientos y reportes de inventario." phase="Fase 3 — ERP" /> },
+              { path: 'inventory', element: <Inventory /> },
             ],
           },
 

@@ -42,6 +42,8 @@ import aiRoutes from './modules/ai/ai.routes';
 import apolloRoutes from './modules/apollo/apollo.routes';
 // Invitations
 import invitationsRoutes from './modules/invitations/invitations.routes';
+// Inventory
+import inventoryRoutes from './modules/inventory/inventory.routes';
 
 // Inicializar schema de base de datos
 createSchema();
@@ -111,6 +113,8 @@ app.use('/api/ai', requireFeature('ai'), aiRoutes);
 app.use('/api/apollo', apolloRoutes);
 // Invitations
 app.use('/api/invitations', invitationsRoutes);
+// Inventory
+app.use('/api/inventory', requireFeature('erp'), inventoryRoutes);
 
 // ─── Servir frontend compilado (modo compartido/público) ─────────────────────
 // Cuando el frontend está compilado (npm run build en /frontend),

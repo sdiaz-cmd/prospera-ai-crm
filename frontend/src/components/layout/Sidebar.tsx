@@ -67,7 +67,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
         { label: 'Productos', to: '/erp/products', icon: Package },
         { label: 'Proveedores', to: '/erp/suppliers', icon: Building2 },
         { label: 'Facturas', to: '/erp/invoices', icon: BarChart3 },
-        { label: 'Inventario', to: '/erp/inventory', icon: Boxes, soon: true },
+        { label: 'Inventario', to: '/erp/inventory', icon: Boxes },
       ],
     },
     { label: 'Usuarios', to: '/users', icon: Users },
