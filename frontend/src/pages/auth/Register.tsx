@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, Mail, Lock, User, Building2, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Building2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/authStore';
@@ -16,6 +16,12 @@ interface RegisterForm {
   confirmPassword: string;
   companyName: string;
 }
+
+const perks = [
+  '14 días gratis sin tarjeta',
+  'CRM + ERP + IA en una sola plataforma',
+  'Soporte en español incluido',
+];
 
 export function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -48,25 +54,32 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-primary-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-primary-500 rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
             <span className="text-white font-bold text-lg">P</span>
           </div>
-          <span className="text-2xl font-bold text-white">
-            PROSPERA<span className="text-primary-400">.AI</span>
+          <span className="text-2xl font-bold text-gray-900">
+            PROSPERA<span className="text-blue-500">.AI</span>
           </span>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-8">
+        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/80 border border-gray-100 p-8">
+          <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Crear cuenta gratis</h2>
-            <p className="text-gray-500 text-sm">14 días de prueba gratuita. Sin tarjeta de crédito.</p>
+            <div className="flex items-center justify-center gap-5 mt-3">
+              {perks.map((p) => (
+                <span key={p} className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                  {p}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Nombre"
@@ -143,18 +156,18 @@ export function Register() {
               />
             </div>
 
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 pt-1">
               <input
                 type="checkbox"
                 id="terms"
                 required
-                className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 Acepto los{' '}
-                <a href="#" className="text-primary-600 hover:underline">Términos de Servicio</a>{' '}
+                <a href="#" className="text-blue-600 hover:underline">Términos de Servicio</a>{' '}
                 y la{' '}
-                <a href="#" className="text-primary-600 hover:underline">Política de Privacidad</a>
+                <a href="#" className="text-blue-600 hover:underline">Política de Privacidad</a>
               </label>
             </div>
 
@@ -163,9 +176,9 @@ export function Register() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 pt-5 border-t border-gray-100 text-center text-sm text-gray-500">
             ¿Ya tienes cuenta?{' '}
-            <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
               Inicia sesión
             </Link>
           </p>

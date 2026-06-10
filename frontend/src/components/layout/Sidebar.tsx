@@ -69,7 +69,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
     >
       {/* Logo */}
       <div className={cn('flex items-center gap-3 px-4 py-5 border-b border-gray-800', collapsed && 'justify-center')}>
-        <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/30">
           <span className="text-white font-bold text-sm">P</span>
         </div>
         {!collapsed && (
