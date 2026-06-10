@@ -150,7 +150,9 @@ export class InvitationsService {
       return;
     }
 
-    await fetch('https://api.resend.com/emails', {
+    console.log(`[RESEND] Enviando invitación a ${toEmail}, from: ${RESEND_FROM}, link: ${link}`);
+
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -159,17 +161,26 @@ export class InvitationsService {
         subject: `${inviterName} te invitó a ${companyName} en PROSPERA.AI`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-            <h2 style="color:#6366f1">PROSPERA.AI</h2>
+            <h2 style="color:#2563eb">PROSPERA.AI</h2>
             <p>Hola,</p>
             <p><strong>${inviterName}</strong> te invitó a unirte a <strong>${companyName}</strong> como <strong>${roleName}</strong>.</p>
             <p>Haz clic en el siguiente botón para crear tu cuenta:</p>
-            <a href="${link}" style="display:inline-block;background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+            <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
               Aceptar invitación
             </a>
+            <p>O copia este enlace en tu navegador:</p>
+            <p style="color:#555;font-size:13px;word-break:break-all">${link}</p>
             <p style="color:#888;font-size:12px">Este enlace expira en 7 días.</p>
           </div>
         `,
       }),
     });
+
+    const body = await res.json().catch(() => ({}));
+    console.log(`[RESEND] Status: ${res.status}`, JSON.stringify(body));
+
+    if (!res.ok) {
+      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
+    }
   }
 }
