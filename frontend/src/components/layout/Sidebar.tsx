@@ -1,13 +1,27 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Target, UserCircle,
   ShoppingBag, BarChart3, Megaphone, Settings, ChevronRight,
-  Boxes, Zap, Globe, Package, Bot
+  Boxes, Zap, Globe, Package, Bot, Lock
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 import { useAuthStore } from '@/store/authStore';
 import { Avatar } from '../ui/Avatar';
+import toast from 'react-hot-toast';
+
+type PlanName = 'trial' | 'starter' | 'growth' | 'enterprise';
+
+const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
+  trial:      { crm: true, erp: false, marketing: false, landing: false, ai: false },
+  starter:    { crm: true, erp: false, marketing: false, landing: false, ai: false },
+  growth:     { crm: true, erp: true,  marketing: true,  landing: true,  ai: false },
+  enterprise: { crm: true, erp: true,  marketing: true,  landing: true,  ai: true  },
+};
+
+function getPlanFeatures(plan: string) {
+  return PLAN_FEATURES[plan as PlanName] ?? PLAN_FEATURES.trial;
+}
 
 interface NavItem {
   label: string;
@@ -15,42 +29,9 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
   soon?: boolean;
+  feature?: string;
   children?: NavItem[];
 }
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-  {
-    label: 'CRM',
-    to: '/crm',
-    icon: Target,
-    children: [
-      { label: 'Leads', to: '/crm/leads', icon: UserCircle },
-      { label: 'Contactos', to: '/crm/contacts', icon: Users },
-      { label: 'Empresas', to: '/crm/accounts', icon: Building2 },
-      { label: 'Oportunidades', to: '/crm/opportunities', icon: Target },
-      { label: 'Actividades', to: '/crm/activities', icon: Zap },
-      { label: 'Tareas', to: '/crm/tasks', icon: Boxes },
-      { label: 'Cotizaciones', to: '/crm/quotes', icon: Package },
-    ],
-  },
-  {
-    label: 'ERP',
-    to: '/erp',
-    icon: ShoppingBag,
-    children: [
-      { label: 'Productos', to: '/erp/products', icon: Package },
-      { label: 'Proveedores', to: '/erp/suppliers', icon: Building2 },
-      { label: 'Facturas', to: '/erp/invoices', icon: BarChart3 },
-      { label: 'Inventario', to: '/erp/inventory', icon: Boxes, soon: true },
-    ],
-  },
-  { label: 'Usuarios', to: '/users', icon: Users },
-  { label: 'Marketing', to: '/marketing', icon: Megaphone },
-  { label: 'IA & Automatización', to: '/ai', icon: Bot },
-  { label: 'Landing Pages', to: '/landing', icon: Globe },
-  { label: 'Reportes', to: '/reports', icon: BarChart3 },
-];
 
 interface SidebarProps {
   collapsed: boolean;
@@ -59,6 +40,42 @@ interface SidebarProps {
 export function Sidebar({ collapsed }: SidebarProps) {
   const { user, company } = useAuthStore();
   const location = useLocation();
+  const features = getPlanFeatures(company?.plan || 'trial');
+
+  const navItems: NavItem[] = [
+    { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+    {
+      label: 'CRM',
+      to: '/crm',
+      icon: Target,
+      children: [
+        { label: 'Leads', to: '/crm/leads', icon: UserCircle },
+        { label: 'Contactos', to: '/crm/contacts', icon: Users },
+        { label: 'Empresas', to: '/crm/accounts', icon: Building2 },
+        { label: 'Oportunidades', to: '/crm/opportunities', icon: Target },
+        { label: 'Actividades', to: '/crm/activities', icon: Zap },
+        { label: 'Tareas', to: '/crm/tasks', icon: Boxes },
+        { label: 'Cotizaciones', to: '/crm/quotes', icon: Package },
+      ],
+    },
+    {
+      label: 'ERP',
+      to: '/erp',
+      icon: ShoppingBag,
+      feature: 'erp',
+      children: [
+        { label: 'Productos', to: '/erp/products', icon: Package },
+        { label: 'Proveedores', to: '/erp/suppliers', icon: Building2 },
+        { label: 'Facturas', to: '/erp/invoices', icon: BarChart3 },
+        { label: 'Inventario', to: '/erp/inventory', icon: Boxes, soon: true },
+      ],
+    },
+    { label: 'Usuarios', to: '/users', icon: Users },
+    { label: 'Marketing', to: '/marketing', icon: Megaphone, feature: 'marketing' },
+    { label: 'IA & Automatización', to: '/ai', icon: Bot, feature: 'ai' },
+    { label: 'Landing Pages', to: '/landing', icon: Globe, feature: 'landing' },
+    { label: 'Reportes', to: '/reports', icon: BarChart3 },
+  ];
 
   return (
     <aside
@@ -75,7 +92,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
         {!collapsed && (
           <div>
             <span className="text-white font-bold text-base">PROSPERA</span>
-            <span className="text-primary-400 font-bold text-base">.AI</span>
+            <span className="text-blue-400 font-bold text-base">.AI</span>
           </div>
         )}
       </div>
@@ -85,7 +102,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
         <div className="px-4 py-3 border-b border-gray-800">
           <p className="text-xs text-gray-500 mb-1">Empresa activa</p>
           <p className="text-sm font-medium text-gray-200 truncate">{company.name}</p>
-          <span className="text-xs text-primary-400 capitalize">{company.plan}</span>
+          <span className="text-xs text-blue-400 capitalize">{company.plan}</span>
         </div>
       )}
 
@@ -97,6 +114,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
             item={item}
             collapsed={collapsed}
             currentPath={location.pathname}
+            features={features}
           />
         ))}
       </nav>
@@ -141,12 +159,43 @@ function NavGroup({
   item,
   collapsed,
   currentPath,
+  features,
 }: {
   item: NavItem;
   collapsed: boolean;
   currentPath: string;
+  features: Record<string, boolean>;
 }) {
+  const navigate = useNavigate();
+  const isLocked = item.feature && !features[item.feature];
+
+  const handleLockedClick = () => {
+    toast.error('Actualiza tu plan para acceder a esta función', { icon: '🔒' });
+    navigate('/settings?tab=plan');
+  };
+
   if (!item.children) {
+    if (isLocked) {
+      return (
+        <button
+          onClick={handleLockedClick}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors opacity-50 cursor-pointer',
+            'text-gray-400 hover:bg-gray-800 hover:text-gray-300',
+            collapsed && 'justify-center'
+          )}
+        >
+          <item.icon className="w-5 h-5 flex-shrink-0" />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">{item.label}</span>
+              <Lock className="w-3.5 h-3.5 text-gray-600" />
+            </>
+          )}
+        </button>
+      );
+    }
+
     return (
       <NavLink
         to={item.to}
@@ -181,6 +230,27 @@ function NavGroup({
   const isGroupActive = item.children.some((child) => currentPath.startsWith(child.to));
   const [open, setOpen] = useState(isGroupActive);
 
+  if (isLocked) {
+    return (
+      <button
+        onClick={handleLockedClick}
+        className={cn(
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors opacity-50',
+          'text-gray-500 hover:bg-gray-800 hover:text-gray-300',
+          collapsed && 'justify-center'
+        )}
+      >
+        <item.icon className="w-5 h-5 flex-shrink-0" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 font-medium text-left">{item.label}</span>
+            <Lock className="w-3.5 h-3.5 text-gray-600" />
+          </>
+        )}
+      </button>
+    );
+  }
+
   return (
     <div>
       <button
@@ -195,9 +265,6 @@ function NavGroup({
         {!collapsed && (
           <>
             <span className="flex-1 font-medium text-left">{item.label}</span>
-            {item.soon && (
-              <span className="text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">Pronto</span>
-            )}
             <ChevronRight className={cn('w-4 h-4 transition-transform', open && 'rotate-90')} />
           </>
         )}

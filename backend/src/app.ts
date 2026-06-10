@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { createSchema } from './database/schema';
 import { errorHandler, notFound } from './middleware/error.middleware';
+import { requireFeature } from './middleware/plan.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -92,20 +93,20 @@ app.use('/api/opportunities', opportunitiesRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/quotes', quotesRoutes);
-// ERP
-app.use('/api/suppliers', suppliersRoutes);
-app.use('/api/products', productsRoutes);
-app.use('/api/invoices', invoicesRoutes);
+// ERP — Growth+
+app.use('/api/suppliers', requireFeature('erp'), suppliersRoutes);
+app.use('/api/products', requireFeature('erp'), productsRoutes);
+app.use('/api/invoices', requireFeature('erp'), invoicesRoutes);
 // Webhook
 app.use('/api/webhook', webhookRoutes);
 // Reports
 app.use('/api/reports', reportsRoutes);
-// Landing Pages
-app.use('/api/landing-pages', landingRoutes);
-// Marketing
-app.use('/api/campaigns', campaignsRoutes);
-// AI
-app.use('/api/ai', aiRoutes);
+// Landing Pages — Growth+
+app.use('/api/landing-pages', requireFeature('landing'), landingRoutes);
+// Marketing — Growth+
+app.use('/api/campaigns', requireFeature('marketing'), campaignsRoutes);
+// AI — Enterprise
+app.use('/api/ai', requireFeature('ai'), aiRoutes);
 // Apollo
 app.use('/api/apollo', apolloRoutes);
 // Invitations

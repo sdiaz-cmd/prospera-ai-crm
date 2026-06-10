@@ -2,6 +2,7 @@ import { run, get, all, count } from '../../database/db';
 import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
 import { buildPaginationMeta } from '../../utils/response';
+import { getPlan } from '../../config/plans';
 
 export class UsersService {
   async findAll(companyId: string, params: { page?: number; limit?: number; search?: string }) {
@@ -71,6 +72,16 @@ export class UsersService {
   async invite(companyId: string, data: { email: string; firstName: string; lastName: string; roleId: string; password: string }) {
     const role = get('SELECT id FROM roles WHERE id = ? AND company_id = ?', [data.roleId, companyId]);
     if (!role) throw new Error('Rol no encontrado');
+
+    // Check plan user limit
+    const company = get<{ plan: string }>('SELECT plan FROM companies WHERE id = ?', [companyId]);
+    const planConfig = getPlan(company?.plan || 'trial');
+    if (planConfig.maxUsers !== Infinity) {
+      const currentUsers = count('SELECT COUNT(*) FROM user_companies WHERE company_id = ?', [companyId]);
+      if (currentUsers >= planConfig.maxUsers) {
+        throw new Error(`Tu plan permite máximo ${planConfig.maxUsers} usuarios. Actualiza tu plan para agregar más.`);
+      }
+    }
 
     let user = get<{ id: string }>('SELECT id FROM users WHERE email = ?', [data.email]);
     if (!user) {
