@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, MoreVertical, Shield, UserCheck, UserX, Trash2, Mail } from 'lucide-react';
+import { Plus, Search, MoreVertical, Shield, UserCheck, UserX, Trash2, Mail, Copy, Check, Link } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { usersService } from '@/services/users.service';
@@ -33,6 +33,8 @@ export function Users() {
   const [search, setSearch] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEmailInviteModal, setShowEmailInviteModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
@@ -72,15 +74,27 @@ export function Users() {
 
   const sendInviteMutation = useMutation({
     mutationFn: (data: InviteEmailForm) => api.post('/invitations', data),
-    onSuccess: () => {
-      toast.success('Invitación enviada por correo');
+    onSuccess: (res) => {
       setShowEmailInviteModal(false);
       resetEmail();
+      const link = res.data?.link;
+      if (link) {
+        setInviteLink(link);
+      } else {
+        toast.success('Invitación creada');
+      }
     },
-    onError: (e: { response?: { data?: { error?: string } } }) => {
-      toast.error(e?.response?.data?.error || 'Error al enviar invitación');
+    onError: (e: { response?: { data?: { error?: string; message?: string } } }) => {
+      toast.error(e?.response?.data?.message || e?.response?.data?.error || 'Error al crear invitación');
     },
   });
+
+  const copyInviteLink = () => {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<InviteForm>();
   const { register: registerEmail, handleSubmit: handleSubmitEmail, reset: resetEmail, formState: { errors: errorsEmail } } = useForm<InviteEmailForm>();
@@ -246,7 +260,7 @@ export function Users() {
         }
       >
         <form id="email-invite-form" onSubmit={handleSubmitEmail(onSendInvite)} className="space-y-4">
-          <p className="text-sm text-gray-500">El trabajador recibirá un email con un enlace para crear su contraseña y activar su cuenta.</p>
+          <p className="text-sm text-gray-500">Se generará un link de invitación para que el usuario cree su contraseña y active su cuenta. Podrás copiarlo y enviárselo por WhatsApp o email.</p>
           <Input
             label="Correo electrónico"
             type="email"
@@ -345,6 +359,44 @@ export function Users() {
             })}
           />
         </form>
+      </Modal>
+
+      {/* Modal link de invitación */}
+      <Modal
+        isOpen={!!inviteLink}
+        onClose={() => { setInviteLink(null); setLinkCopied(false); }}
+        title="Invitación creada"
+        size="md"
+        footer={
+          <Button onClick={() => { setInviteLink(null); setLinkCopied(false); }}>
+            Listo
+          </Button>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+            <Link className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-800">Invitación creada exitosamente. Comparte este link con el usuario.</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Link de invitación</label>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={inviteLink || ''}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 focus:outline-none"
+              />
+              <button
+                onClick={copyInviteLink}
+                className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+              >
+                {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {linkCopied ? 'Copiado' : 'Copiar'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400">Este link expira en 7 días. El usuario lo usará para crear su contraseña y activar su cuenta.</p>
+        </div>
       </Modal>
     </div>
   );

@@ -52,7 +52,8 @@ export class InvitationsService {
       token
     );
 
-    return { id: invitationId, email: data.email, role: role.name, expiresAt };
+    const link = `${APP_URL}/invite/${token}`;
+    return { id: invitationId, email: data.email, role: role.name, expiresAt, link };
   }
 
   getByToken(token: string) {
