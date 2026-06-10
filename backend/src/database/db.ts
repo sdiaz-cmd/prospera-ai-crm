@@ -3,12 +3,19 @@
 // @ts-ignore
 const { DatabaseSync } = require('node:sqlite');
 import path from 'path';
+import fs from 'fs';
 
 // DATABASE_PATH puede ser ruta absoluta o relativa al directorio backend/
 // En Railway, el volumen persistente se monta en /data
 const defaultPath = process.env.NODE_ENV === 'production' ? '/data/prospera.db' : './dev.db';
 const rawPath = process.env.DATABASE_PATH || defaultPath;
 const dbPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+
+// Crear directorio si no existe (necesario en Railway antes de montar volumen)
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 export const db = new DatabaseSync(dbPath);
 
