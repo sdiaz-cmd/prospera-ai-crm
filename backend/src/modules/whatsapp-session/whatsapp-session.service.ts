@@ -18,11 +18,18 @@ interface SessionState {
 
 const sessions = new Map<string, SessionState>();
 
-// ─── Lazy ESM loader ─────────────────────────────────────────────────────────
+// ─── Lazy ESM loader (optional dep — won't crash if not installed) ───────────
 let _baileys: any = null;
+let _baileysError: string | null = null;
 async function getBaileys() {
+  if (_baileysError) throw new Error(_baileysError);
   if (!_baileys) {
-    _baileys = await import('@whiskeysockets/baileys');
+    try {
+      _baileys = await import('@whiskeysockets/baileys');
+    } catch (e) {
+      _baileysError = `Baileys no disponible: ${(e as Error).message}`;
+      throw new Error(_baileysError);
+    }
   }
   return _baileys;
 }
