@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { run, get, all } from '../../database/db';
 import bcrypt from 'bcryptjs';
+import { generateAccessToken, generateRefreshToken } from '../../utils/jwt';
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -123,7 +124,30 @@ export class InvitationsService {
     run('UPDATE user_invitations SET accepted_at = ? WHERE id = ?',
       [new Date().toISOString(), inv.id]);
 
-    return { success: true };
+    // Generar tokens para auto-login
+    const company = get<{ id: string; name: string; slug: string; plan: string; logo_url: string; currency: string; timezone: string }>(
+      'SELECT id, name, slug, plan, logo_url, currency, timezone FROM companies WHERE id = ?', [inv.company_id]
+    );
+    const role = get<{ id: string; name: string }>('SELECT id, name FROM roles WHERE id = ?', [inv.role_id]);
+    const user = get<{ id: string; email: string; first_name: string; last_name: string }>(
+      'SELECT id, email, first_name, last_name FROM users WHERE id = ?', [userId]
+    );
+
+    const accessToken = generateAccessToken({ userId, companyId: inv.company_id, email: inv.email });
+    const refreshToken = generateRefreshToken({ userId, companyId: inv.company_id, email: inv.email });
+    run('INSERT INTO refresh_tokens (id, token, user_id, expires_at) VALUES (?, ?, ?, ?)',
+      [uuid(), refreshToken, userId, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()]);
+
+    return {
+      success: true,
+      accessToken,
+      refreshToken,
+      user: { id: userId, email: inv.email, firstName: data.firstName, lastName: data.lastName },
+      company: { id: company?.id, name: company?.name, slug: company?.slug, plan: company?.plan, logoUrl: company?.logo_url, currency: company?.currency || 'USD', timezone: company?.timezone || 'UTC' },
+      role: { id: role?.id, name: role?.name },
+      permissions: [],
+      isOwner: false,
+    };
   }
 
   listPending(companyId: string) {

@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import api from '../../services/api';
+import { useAuthStore } from '@/store/authStore';
 
 export function AcceptInvitation() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const { setAuth } = useAuthStore();
 
   const [info, setInfo] = useState<{ email: string; companyName: string; roleName: string } | null>(null);
   const [error, setError] = useState('');
@@ -28,12 +30,14 @@ export function AcceptInvitation() {
     setSubmitting(true);
     setError('');
     try {
-      await api.post(`/invitations/${token}/accept`, {
+      const res = await api.post(`/invitations/${token}/accept`, {
         firstName: form.firstName,
         lastName: form.lastName,
         password: form.password,
       });
-      navigate('/login?invited=1');
+      // Auto-login: guardar sesión y redirigir al dashboard
+      setAuth(res.data);
+      navigate('/dashboard');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string } } };
       setError(err.response?.data?.error || 'Error al activar la cuenta');
