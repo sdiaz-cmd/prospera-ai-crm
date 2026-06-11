@@ -5,9 +5,11 @@ import {
   ShoppingBag, BarChart3, Megaphone, Settings, ChevronRight,
   Boxes, Zap, Globe, Package, Bot, Lock, MessageCircle
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
 import { useAuthStore } from '@/store/authStore';
 import { Avatar } from '../ui/Avatar';
+import api from '@/services/api';
 import toast from 'react-hot-toast';
 
 type PlanName = 'trial' | 'starter' | 'growth' | 'enterprise';
@@ -28,6 +30,7 @@ interface NavItem {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
+  badgeCount?: number;
   soon?: boolean;
   feature?: string;
   children?: NavItem[];
@@ -41,6 +44,14 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const { user, company } = useAuthStore();
   const location = useLocation();
   const features = getPlanFeatures(company?.plan || 'trial');
+
+  const { data: waUnread } = useQuery<{ count: number }>({
+    queryKey: ['wa-unread-sidebar'],
+    queryFn: () => api.get('/whatsapp/unread-count').then(r => r.data.data),
+    refetchInterval: 10000,
+    staleTime: 5000,
+  });
+  const unreadCount = waUnread?.count ?? 0;
 
   const navItems: NavItem[] = [
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
@@ -73,7 +84,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
     { label: 'Usuarios', to: '/users', icon: Users },
     { label: 'Marketing', to: '/marketing', icon: Megaphone, feature: 'marketing' },
     { label: 'IA & Automatización', to: '/ai', icon: Bot, feature: 'ai' },
-    { label: 'Agente WhatsApp', to: '/whatsapp-agent', icon: MessageCircle },
+    { label: 'Agente WhatsApp', to: '/whatsapp-agent', icon: MessageCircle, badgeCount: unreadCount > 0 ? unreadCount : undefined },
     { label: 'Landing Pages', to: '/landing', icon: Globe, feature: 'landing' },
     { label: 'Reportes', to: '/reports', icon: BarChart3 },
   ];
@@ -210,10 +221,22 @@ function NavGroup({
         }
         onClick={item.soon ? (e) => e.preventDefault() : undefined}
       >
-        <item.icon className="w-5 h-5 flex-shrink-0" />
+        <span className="relative flex-shrink-0">
+          <item.icon className="w-5 h-5" />
+          {collapsed && item.badgeCount ? (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+              {item.badgeCount > 9 ? '9+' : item.badgeCount}
+            </span>
+          ) : null}
+        </span>
         {!collapsed && (
           <>
             <span className="flex-1">{item.label}</span>
+            {item.badgeCount ? (
+              <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+                {item.badgeCount > 99 ? '99+' : item.badgeCount}
+              </span>
+            ) : null}
             {item.soon && (
               <span className="text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">Pronto</span>
             )}

@@ -50,6 +50,8 @@ import whatsappSessionRoutes from './modules/whatsapp-session/whatsapp-session.r
 import { whatsAppSessionService } from './modules/whatsapp-session/whatsapp-session.service';
 // WhatsApp Agent Config
 import whatsappAgentRoutes from './modules/whatsapp-agent/whatsapp-agent.routes';
+// WhatsApp Inbox
+import whatsappInboxRoutes from './modules/whatsapp-inbox/whatsapp-inbox.routes';
 
 // Inicializar schema de base de datos
 createSchema();
@@ -131,6 +133,8 @@ app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 app.use('/api/whatsapp', whatsappSessionRoutes);
 // WhatsApp Agent Config
 app.use('/api/whatsapp-agent', whatsappAgentRoutes);
+// WhatsApp Inbox
+app.use('/api/whatsapp', whatsappInboxRoutes);
 
 // ─── Servir frontend compilado (modo compartido/público) ─────────────────────
 // Cuando el frontend está compilado (npm run build en /frontend),

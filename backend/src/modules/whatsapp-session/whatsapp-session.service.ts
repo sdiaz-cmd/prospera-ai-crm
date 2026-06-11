@@ -147,37 +147,27 @@ export class WhatsAppSessionService {
 
   private async handleIncoming(companyId: string, phone: string, message: string) {
     try {
-      // 1. Get company name for agent context
+      // 1. Process via inbox service (store message + CRM deduplication)
+      const { whatsAppInboxService } = require('../whatsapp-inbox/whatsapp-inbox.service');
+      whatsAppInboxService.processIncoming(companyId, phone, message);
+
+      // 2. Generate AI reply if agent is active (MODO IA)
       const { get } = require('../../database/db');
       const company = get('SELECT name FROM companies WHERE id = ?', [companyId]) as { name: string } | null;
       const companyName = company?.name || 'la empresa';
 
-      // 2. Register the lead/activity in CRM
-      const { WhatsAppWebhookService } = require('../webhook/whatsapp.service');
-      const webhookSvc = new WhatsAppWebhookService();
-
-      // 3. Generate AI reply if agent is active
       const { whatsAppAgentService } = require('../whatsapp-agent/whatsapp-agent.service');
       const botReply: string | null = await whatsAppAgentService.generateReply(
         companyId, companyName, phone, message
       );
 
-      // 4. Save to CRM (with bot reply if any)
-      webhookSvc.process(companyId, {
-        phone,
-        message,
-        direction: 'inbound',
-        botResponse: botReply || undefined,
-      });
-
-      // 5. Send the reply back on WhatsApp if we have one
+      // 3. Send and store bot reply if any
       if (botReply) {
         const session = sessions.get(companyId);
         if (session?.socket && session.status === 'connected') {
           const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
-          session.socket.sendMessage(jid, { text: botReply }).catch((err: Error) => {
-            console.error('[WA] Error enviando respuesta del bot:', err.message);
-          });
+          await session.socket.sendMessage(jid, { text: botReply });
+          whatsAppInboxService.storeMessage(companyId, phone, 'outbound', botReply, true);
         }
       }
     } catch (err) {
@@ -208,6 +198,16 @@ export class WhatsAppSessionService {
       phone: session?.phone,
       qr: session?.qrDataUrl,
     };
+  }
+
+  /** Send a message to a phone number */
+  async sendMessage(companyId: string, phone: string, body: string): Promise<void> {
+    const session = sessions.get(companyId);
+    if (!session?.socket || session.status !== 'connected') {
+      throw new Error('WhatsApp no conectado');
+    }
+    const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
+    await session.socket.sendMessage(jid, { text: body });
   }
 
   /** Subscribe to live events for a company. Returns an unsubscribe function. */

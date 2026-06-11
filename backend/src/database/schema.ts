@@ -570,4 +570,36 @@ export function createSchema() {
       FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
     );
   `);
+
+  // ── Conversaciones WhatsApp ────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS whatsapp_conversations (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      contact_id TEXT,
+      lead_id TEXT,
+      contact_name TEXT,
+      unread_count INTEGER DEFAULT 0,
+      last_message TEXT DEFAULT '',
+      last_message_at TEXT DEFAULT (datetime('now')),
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(company_id, phone),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+  `);
+
+  // ── Mensajes WhatsApp ──────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS whatsapp_messages (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      direction TEXT NOT NULL CHECK(direction IN ('inbound','outbound')),
+      body TEXT NOT NULL,
+      is_bot INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+  `);
 }
