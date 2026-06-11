@@ -19,7 +19,7 @@ export const registerValidation = [
 ];
 
 export const loginValidation = [
-  body('email').isEmail().normalizeEmail().withMessage('Correo electrónico inválido'),
+  body('email').isEmail().withMessage('Correo electrónico inválido').customSanitizer(v => v?.toLowerCase?.() ?? v),
   body('password').notEmpty().withMessage('La contraseña es requerida'),
 ];
 
