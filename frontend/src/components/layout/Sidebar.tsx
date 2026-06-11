@@ -104,7 +104,6 @@ export function Sidebar({ collapsed }: SidebarProps) {
         {!collapsed && (
           <div>
             <span className="text-white font-bold text-base">PROSPERA</span>
-            <span className="text-blue-400 font-bold text-base">.AI</span>
           </div>
         )}
       </div>
