@@ -10,6 +10,9 @@
     "start": "node --experimental-sqlite dist/server.js",
     "db:setup": "node --experimental-sqlite node_modules/.bin/tsx src/database/setup.ts"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "bcryptjs": "^2.4.3",
