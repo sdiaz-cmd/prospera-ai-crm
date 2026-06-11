@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { run, get, all } from '../../database/db';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '../../utils/jwt';
+import normalizeEmailFn from 'validator/lib/normalizeEmail';
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -97,8 +98,8 @@ export class InvitationsService {
     if (inv.accepted_at) throw new Error('Esta invitación ya fue usada');
     if (new Date() > new Date(inv.expires_at)) throw new Error('Esta invitación ha expirado');
 
-    // Normalizar email para consistencia con el login
-    const normalizedEmail = inv.email.toLowerCase();
+    // Normalizar email igual que express-validator normalizeEmail() para consistencia con login
+    const normalizedEmail = normalizeEmailFn(inv.email) || inv.email.toLowerCase();
 
     // Verificar si el usuario ya existe (en otra empresa) o crear uno nuevo
     let userId = (get<{ id: string }>('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]))?.id;
