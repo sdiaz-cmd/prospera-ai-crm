@@ -31,13 +31,22 @@ export class AuthService {
       run('INSERT INTO role_permissions (id, role_id, permission_id) VALUES (?, ?, ?)', [uuid(), adminId, perm.id]);
     }
 
-    const managerId = uuid();
-    run('INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
-      [managerId, companyId, 'Gerente', 'Acceso a CRM, reportes y gestión de equipo']);
-
-    const salesId = uuid();
-    run('INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
-      [salesId, companyId, 'Ejecutivo de Ventas', 'Acceso a CRM: leads, contactos, oportunidades']);
+    const defaultRoles = [
+      { name: 'Gerente',              description: 'Acceso a CRM, reportes y gestión de equipo' },
+      { name: 'Ejecutivo de Ventas',  description: 'Acceso a CRM: leads, contactos, oportunidades' },
+      { name: 'Recursos Humanos',     description: 'Gestión de personal y acceso a usuarios' },
+      { name: 'Finanzas',             description: 'Acceso a facturas, cotizaciones y reportes financieros' },
+      { name: 'Product Manager',      description: 'Gestión de productos, catálogo e inventario' },
+      { name: 'Marketing',            description: 'Acceso a campañas, landing pages y reportes' },
+      { name: 'Diseño',               description: 'Acceso a landing pages y recursos visuales' },
+      { name: 'Servicio Técnico',     description: 'Gestión de actividades y soporte a clientes' },
+      { name: 'Jefe de Bodega',       description: 'Gestión completa de inventario y proveedores' },
+      { name: 'Asistente de Bodega',  description: 'Consulta y registro de movimientos de inventario' },
+    ];
+    for (const r of defaultRoles) {
+      run('INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
+        [uuid(), companyId, r.name, r.description]);
+    }
 
     // Pipeline por defecto
     const pipelineId = uuid();

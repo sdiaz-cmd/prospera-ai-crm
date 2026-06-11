@@ -602,4 +602,38 @@ export function createSchema() {
       FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
     );
   `);
+
+  // ── Migración: nuevos roles para empresas existentes ─────────────────
+  const { run: dbRun, get: dbGet, all: dbAll } = require('./db');
+  const newRoles = [
+    { name: 'Recursos Humanos',    description: 'Gestión de personal y acceso a usuarios' },
+    { name: 'Finanzas',            description: 'Acceso a facturas, cotizaciones y reportes financieros' },
+    { name: 'Product Manager',     description: 'Gestión de productos, catálogo e inventario' },
+    { name: 'Marketing',           description: 'Acceso a campañas, landing pages y reportes' },
+    { name: 'Diseño',              description: 'Acceso a landing pages y recursos visuales' },
+    { name: 'Servicio Técnico',    description: 'Gestión de actividades y soporte a clientes' },
+    { name: 'Jefe de Bodega',      description: 'Gestión completa de inventario y proveedores' },
+    { name: 'Asistente de Bodega', description: 'Consulta y registro de movimientos de inventario' },
+  ];
+
+  try {
+    const { v4: uuidv4 } = require('uuid');
+    const companies = dbAll('SELECT id FROM companies', []) as { id: string }[];
+    for (const company of companies) {
+      for (const role of newRoles) {
+        const exists = dbGet(
+          'SELECT id FROM roles WHERE company_id = ? AND name = ?',
+          [company.id, role.name]
+        );
+        if (!exists) {
+          dbRun(
+            'INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
+            [uuidv4(), company.id, role.name, role.description]
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[DB] Error en migración de roles:', (err as Error).message);
+  }
 }
