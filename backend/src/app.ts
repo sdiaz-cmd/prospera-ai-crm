@@ -59,6 +59,9 @@ whatsAppSessionService.reconnectSaved().catch(console.error);
 
 const app = express();
 
+// Confiar en el proxy de Railway/Vercel para X-Forwarded-For
+app.set('trust proxy', 1);
+
 app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
 
 // CORS: acepta localhost en dev y cualquier dominio configurado en CORS_ORIGIN
