@@ -549,4 +549,25 @@ export function createSchema() {
       FOREIGN KEY (invited_by) REFERENCES users(id)
     );
   `);
+
+  // ── Configuración del Agente WhatsApp IA ─────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS whatsapp_agent_config (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL UNIQUE,
+      is_active INTEGER DEFAULT 1,
+      agent_name TEXT DEFAULT 'Asistente',
+      business_description TEXT DEFAULT '',
+      business_hours TEXT DEFAULT '',
+      tone TEXT DEFAULT 'amigable',
+      main_goal TEXT DEFAULT 'capturar_lead',
+      greeting TEXT DEFAULT '',
+      qualification_questions TEXT DEFAULT '[]',
+      knowledge_base TEXT DEFAULT '[]',
+      special_announcement TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+  `);
 }

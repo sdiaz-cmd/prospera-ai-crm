@@ -25,6 +25,7 @@ import { Suppliers } from '@/pages/erp/Suppliers';
 import { Invoices } from '@/pages/erp/Invoices';
 import { Inventory } from '@/pages/erp/Inventory';
 import { AIPage } from '@/pages/ai/AIPage';
+import { WhatsAppAgentPage } from '@/pages/whatsapp-agent/WhatsAppAgentPage';
 import { Marketing } from '@/pages/marketing/Marketing';
 import { LandingPages } from '@/pages/landing/LandingPages';
 import { PublicLanding } from '@/pages/landing/PublicLanding';
@@ -87,6 +88,9 @@ export const router = createBrowserRouter([
 
           // IA — Fase 5
           { path: '/ai', element: <AIPage /> },
+
+          // Agente WhatsApp
+          { path: '/whatsapp-agent', element: <WhatsAppAgentPage /> },
 
           // Landing — Fase 6
           { path: '/landing', element: <LandingPages /> },

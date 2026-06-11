@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Target, UserCircle,
   ShoppingBag, BarChart3, Megaphone, Settings, ChevronRight,
-  Boxes, Zap, Globe, Package, Bot, Lock
+  Boxes, Zap, Globe, Package, Bot, Lock, MessageCircle
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 import { useAuthStore } from '@/store/authStore';
@@ -73,6 +73,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
     { label: 'Usuarios', to: '/users', icon: Users },
     { label: 'Marketing', to: '/marketing', icon: Megaphone, feature: 'marketing' },
     { label: 'IA & Automatización', to: '/ai', icon: Bot, feature: 'ai' },
+    { label: 'Agente WhatsApp', to: '/whatsapp-agent', icon: MessageCircle },
     { label: 'Landing Pages', to: '/landing', icon: Globe, feature: 'landing' },
     { label: 'Reportes', to: '/reports', icon: BarChart3 },
   ];

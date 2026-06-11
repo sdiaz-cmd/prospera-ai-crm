@@ -132,18 +132,47 @@ export class WhatsAppSessionService {
           '';
 
         if (phone && text) {
-          this.handleIncoming(companyId, phone, text);
+          this.handleIncoming(companyId, phone, text).catch(console.error);
         }
       }
     });
   }
 
-  private handleIncoming(companyId: string, phone: string, message: string) {
+  private async handleIncoming(companyId: string, phone: string, message: string) {
     try {
-      // Lazy require to avoid circular dependencies
+      // 1. Get company name for agent context
+      const { get } = require('../../database/db');
+      const company = get('SELECT name FROM companies WHERE id = ?', [companyId]) as { name: string } | null;
+      const companyName = company?.name || 'la empresa';
+
+      // 2. Register the lead/activity in CRM
       const { WhatsAppWebhookService } = require('../webhook/whatsapp.service');
-      const svc = new WhatsAppWebhookService();
-      svc.process(companyId, { phone, message, direction: 'inbound' });
+      const webhookSvc = new WhatsAppWebhookService();
+
+      // 3. Generate AI reply if agent is active
+      const { whatsAppAgentService } = require('../whatsapp-agent/whatsapp-agent.service');
+      const botReply: string | null = await whatsAppAgentService.generateReply(
+        companyId, companyName, phone, message
+      );
+
+      // 4. Save to CRM (with bot reply if any)
+      webhookSvc.process(companyId, {
+        phone,
+        message,
+        direction: 'inbound',
+        botResponse: botReply || undefined,
+      });
+
+      // 5. Send the reply back on WhatsApp if we have one
+      if (botReply) {
+        const session = sessions.get(companyId);
+        if (session?.socket && session.status === 'connected') {
+          const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
+          session.socket.sendMessage(jid, { text: botReply }).catch((err: Error) => {
+            console.error('[WA] Error enviando respuesta del bot:', err.message);
+          });
+        }
+      }
     } catch (err) {
       console.error('[WA] Error procesando mensaje entrante:', (err as Error).message);
     }
