@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Globe, CreditCard, Shield, Bell, Zap, Copy, CheckCircle, MessageCircle, ArrowDownCircle, ArrowUpCircle, Telescope, KeyRound, Users } from 'lucide-react';
+import { Building2, Globe, CreditCard, Shield, Bell, Zap, Copy, CheckCircle, MessageCircle, ArrowDownCircle, ArrowUpCircle, Telescope, KeyRound, Users, Wifi, WifiOff, RefreshCw, Smartphone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
@@ -188,42 +188,215 @@ function ApolloConfig() {
   );
 }
 
+// ─── WhatsApp QR Panel ────────────────────────────────────────────────────────
+
+type WaStatus = 'disconnected' | 'qr' | 'connecting' | 'connected';
+
+function WhatsAppPanel() {
+  const [status, setStatus] = useState<WaStatus>('disconnected');
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Fetch initial status
+  useEffect(() => {
+    api.get('/whatsapp/status').then(r => {
+      const d = r.data.data;
+      setStatus(d.status);
+      setPhone(d.phone || null);
+      if (d.qr) setQrDataUrl(d.qr);
+    }).catch(() => {});
+  }, []);
+
+  // Open SSE stream while not connected
+  useEffect(() => {
+    if (status === 'connected') {
+      eventSourceRef.current?.close();
+      return;
+    }
+
+    const token = localStorage.getItem('accessToken');
+    const baseUrl = (import.meta as any).env?.VITE_API_URL || '/api';
+
+    // SSE with auth header isn't possible natively — pass token as query param
+    const url = `${baseUrl}/whatsapp/stream?token=${token}`;
+    const es = new EventSource(url);
+    eventSourceRef.current = es;
+
+    es.onmessage = (e) => {
+      try {
+        const event = JSON.parse(e.data);
+        if (event.type === 'qr') {
+          setStatus('qr');
+          setQrDataUrl(event.qr);
+        } else if (event.type === 'connected') {
+          setStatus('connected');
+          setQrDataUrl(null);
+          setPhone(event.phone || null);
+          setConnecting(false);
+        } else if (event.type === 'disconnected') {
+          setStatus('disconnected');
+          setQrDataUrl(null);
+          setPhone(null);
+        }
+      } catch {}
+    };
+
+    return () => es.close();
+  }, [status]);
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    setStatus('connecting');
+    try {
+      await api.post('/whatsapp/connect');
+    } catch {
+      setConnecting(false);
+      setStatus('disconnected');
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await api.post('/whatsapp/disconnect');
+      setStatus('disconnected');
+      setQrDataUrl(null);
+      setPhone(null);
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const statusConfig: Record<WaStatus, { label: string; color: string; icon: JSX.Element }> = {
+    disconnected: { label: 'Desconectado', color: 'text-gray-400', icon: <WifiOff className="w-4 h-4" /> },
+    connecting:   { label: 'Iniciando...', color: 'text-yellow-500', icon: <RefreshCw className="w-4 h-4 animate-spin" /> },
+    qr:           { label: 'Escanea el QR', color: 'text-blue-500', icon: <Smartphone className="w-4 h-4" /> },
+    connected:    { label: `Conectado${phone ? ` · +${phone}` : ''}`, color: 'text-green-600', icon: <Wifi className="w-4 h-4" /> },
+  };
+
+  const sc = statusConfig[status];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 text-green-600" />
+            </div>
+            <div>
+              <CardTitle>WhatsApp</CardTitle>
+              <p className="text-xs text-gray-400 mt-0.5">Conecta tu número y recibe leads automáticamente</p>
+            </div>
+          </div>
+          <div className={`flex items-center gap-1.5 text-sm font-medium ${sc.color}`}>
+            {sc.icon}
+            <span>{sc.label}</span>
+          </div>
+        </div>
+      </CardHeader>
+
+      <div className="px-6 pb-6 space-y-5">
+        {/* QR code display */}
+        {(status === 'qr' || status === 'connecting') && (
+          <div className="flex flex-col items-center gap-4 py-4">
+            {status === 'qr' && qrDataUrl ? (
+              <>
+                <div className="p-3 bg-white border-2 border-gray-200 rounded-2xl shadow-sm">
+                  <img src={qrDataUrl} alt="QR WhatsApp" className="w-52 h-52" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-gray-800">Escanea con tu teléfono</p>
+                  <p className="text-xs text-gray-400">Abre WhatsApp → Dispositivos vinculados → Vincular un dispositivo</p>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                <p className="text-sm text-gray-500">Generando código QR...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Connected state */}
+        {status === 'connected' && (
+          <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-xl p-4">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <Wifi className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-green-800">WhatsApp conectado</p>
+              {phone && <p className="text-xs text-green-600">+{phone}</p>}
+              <p className="text-xs text-green-600 mt-0.5">Los mensajes entrantes crean leads automáticamente</p>
+            </div>
+          </div>
+        )}
+
+        {/* Disconnected state */}
+        {status === 'disconnected' && (
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2">
+            <p className="text-sm font-semibold text-gray-700">¿Cómo funciona?</p>
+            <div className="space-y-1.5 text-xs text-gray-500">
+              {[
+                'Haz clic en "Conectar WhatsApp" y aparecerá un código QR',
+                'Ábrelo con tu teléfono en WhatsApp → Dispositivos vinculados',
+                'Cada mensaje recibido crea o actualiza un Lead en el CRM',
+                'El lead se asigna automáticamente al siguiente ejecutivo disponible',
+              ].map((t, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="font-bold text-gray-400 flex-shrink-0">{i + 1}.</span>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          {status !== 'connected' ? (
+            <Button
+              onClick={handleConnect}
+              loading={connecting || status === 'connecting'}
+              disabled={status === 'qr'}
+              className="flex-1"
+            >
+              {status === 'qr' ? 'Esperando escaneo...' : 'Conectar WhatsApp'}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={handleDisconnect}
+              loading={disconnecting}
+              className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+            >
+              Desconectar
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 // ─── Integraciones Tab ────────────────────────────────────────────────────────
 
 function IntegracionesTab() {
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  const { data: info } = useQuery({
-    queryKey: ['webhook-info'],
-    queryFn: () => api.get('/webhook/info').then(r => r.data),
-  });
-
   const { data: stats } = useQuery({
     queryKey: ['webhook-stats'],
     queryFn: () => api.get('/webhook/stats').then(r => r.data),
-    refetchInterval: 10000,
+    refetchInterval: 15000,
   });
 
   const { data: events } = useQuery({
     queryKey: ['webhook-events'],
     queryFn: () => api.get('/webhook/events').then(r => r.data.data),
-    refetchInterval: 10000,
+    refetchInterval: 15000,
   });
-
-  const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const CopyBtn = ({ text, id }: { text: string; id: string }) => (
-    <button
-      onClick={() => copy(text, id)}
-      className="flex-shrink-0 p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-    >
-      {copiedKey === id ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-    </button>
-  );
 
   return (
     <div className="space-y-6">
@@ -246,105 +419,8 @@ function IntegracionesTab() {
         </div>
       )}
 
-      {/* Webhook config */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-green-600" />
-            </div>
-            <div>
-              <CardTitle>Webhook de WhatsApp</CardTitle>
-              <p className="text-xs text-gray-400 mt-0.5">Conecta tu agente de WhatsApp con PROSPERA.AI</p>
-            </div>
-          </div>
-        </CardHeader>
-
-        <div className="space-y-4 px-6 pb-6">
-          {/* URL */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">URL del Webhook</label>
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-              <code className="flex-1 text-sm text-gray-800 font-mono break-all">
-                {info?.url || 'http://localhost:4000/api/webhook/whatsapp'}
-              </code>
-              <CopyBtn text={info?.url || ''} id="url" />
-            </div>
-          </div>
-
-          {/* API Key */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">API Key (X-API-Key)</label>
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-              <code className="flex-1 text-sm text-gray-800 font-mono break-all">
-                {info?.apiKey || '••••••••••••••••'}
-              </code>
-              <CopyBtn text={info?.apiKey || ''} id="apikey" />
-            </div>
-          </div>
-
-          {/* Company ID */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Company ID (X-Company-Id)</label>
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-              <code className="flex-1 text-sm text-gray-800 font-mono break-all">
-                {info?.companyId || '—'}
-              </code>
-              <CopyBtn text={info?.companyId || ''} id="companyid" />
-            </div>
-          </div>
-
-          {/* Example payload */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Ejemplo de llamada (JSON)</label>
-            <div className="relative bg-gray-900 rounded-xl p-4 overflow-x-auto">
-              <button
-                onClick={() => copy(JSON.stringify(info?.instructions?.body || {}, null, 2), 'payload')}
-                className="absolute top-3 right-3 p-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg"
-              >
-                {copiedKey === 'payload' ? <CheckCircle className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5 text-gray-300" />}
-              </button>
-              <pre className="text-xs text-green-400 font-mono leading-relaxed">
-{`POST ${info?.url || 'http://localhost:4000/api/webhook/whatsapp'}
-Headers:
-  X-API-Key: ${info?.apiKey || 'tu-api-key'}
-  X-Company-Id: ${info?.companyId || 'tu-company-id'}
-  Content-Type: application/json
-
-Body:
-${JSON.stringify({
-  phone: '+52 55 1234 5678',
-  name: 'Juan Pérez',
-  email: 'juan@empresa.com',
-  company: 'Empresa SA',
-  message: 'Hola, me interesa su producto',
-  botResponse: 'Hola Juan, con gusto te ayudo...',
-  direction: 'inbound',
-}, null, 2)}`}
-              </pre>
-            </div>
-          </div>
-
-          {/* How it works */}
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-2">
-            <p className="text-sm font-semibold text-blue-800">¿Cómo funciona?</p>
-            <div className="space-y-1.5 text-xs text-blue-700">
-              {[
-                'Tu agente de WhatsApp llama a esta URL cada vez que recibe un mensaje',
-                'Si el número de teléfono no existe en el CRM → crea un Lead nuevo automáticamente',
-                'Si ya existe → actualiza sus datos y registra el mensaje como actividad',
-                'El lead se asigna al siguiente ejecutivo disponible (rotación automática)',
-                'El historial de conversaciones aparece en la sección de Actividades del lead',
-              ].map((t, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="font-bold flex-shrink-0">{i + 1}.</span>
-                  <span>{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* QR Panel */}
+      <WhatsAppPanel />
 
       {/* Apollo Config */}
       <ApolloConfig />
@@ -355,7 +431,7 @@ ${JSON.stringify({
           <CardTitle>Últimos mensajes recibidos</CardTitle>
         </CardHeader>
         {!events?.length ? (
-          <p className="px-6 pb-6 text-sm text-gray-400">Aún no hay mensajes. Configura tu agente de WhatsApp y los eventos aparecerán aquí.</p>
+          <p className="px-6 pb-6 text-sm text-gray-400">Aún no hay mensajes. Conecta WhatsApp y los eventos aparecerán aquí.</p>
         ) : (
           <div className="divide-y divide-gray-50">
             {(events as Record<string, unknown>[]).map((ev) => (

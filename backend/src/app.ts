@@ -45,9 +45,15 @@ import apolloRoutes from './modules/apollo/apollo.routes';
 import invitationsRoutes from './modules/invitations/invitations.routes';
 // Inventory
 import inventoryRoutes from './modules/inventory/inventory.routes';
+// WhatsApp QR Session
+import whatsappSessionRoutes from './modules/whatsapp-session/whatsapp-session.routes';
+import { whatsAppSessionService } from './modules/whatsapp-session/whatsapp-session.service';
 
 // Inicializar schema de base de datos
 createSchema();
+
+// Reconectar sesiones de WhatsApp guardadas al arrancar
+whatsAppSessionService.reconnectSaved().catch(console.error);
 
 const app = express();
 
@@ -116,6 +122,8 @@ app.use('/api/apollo', apolloRoutes);
 app.use('/api/invitations', invitationsRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
+// WhatsApp QR Session
+app.use('/api/whatsapp', whatsappSessionRoutes);
 
 // ─── Servir frontend compilado (modo compartido/público) ─────────────────────
 // Cuando el frontend está compilado (npm run build en /frontend),
