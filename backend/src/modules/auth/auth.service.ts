@@ -76,7 +76,8 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = get<Record<string, unknown>>('SELECT * FROM users WHERE email = ?', [email]);
+    // Búsqueda case-insensitive para evitar problemas con normalización de emails
+    const user = get<Record<string, unknown>>('SELECT * FROM users WHERE LOWER(email) = LOWER(?)', [email]);
     if (!user || !user.is_active) throw new Error('Credenciales incorrectas');
 
     const valid = await bcrypt.compare(password, user.password as string);

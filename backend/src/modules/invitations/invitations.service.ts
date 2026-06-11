@@ -97,8 +97,11 @@ export class InvitationsService {
     if (inv.accepted_at) throw new Error('Esta invitación ya fue usada');
     if (new Date() > new Date(inv.expires_at)) throw new Error('Esta invitación ha expirado');
 
+    // Normalizar email para consistencia con el login
+    const normalizedEmail = inv.email.toLowerCase();
+
     // Verificar si el usuario ya existe (en otra empresa) o crear uno nuevo
-    let userId = (get<{ id: string }>('SELECT id FROM users WHERE email = ?', [inv.email]))?.id;
+    let userId = (get<{ id: string }>('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [normalizedEmail]))?.id;
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
 
@@ -110,7 +113,7 @@ export class InvitationsService {
       userId = uuid();
       run(
         'INSERT INTO users (id, email, first_name, last_name, password, is_active) VALUES (?, ?, ?, ?, ?, 1)',
-        [userId, inv.email, data.firstName, data.lastName, hashedPassword]
+        [userId, normalizedEmail, data.firstName, data.lastName, hashedPassword]
       );
     }
 
@@ -133,8 +136,8 @@ export class InvitationsService {
       'SELECT id, email, first_name, last_name FROM users WHERE id = ?', [userId]
     );
 
-    const accessToken = generateAccessToken({ userId, companyId: inv.company_id, email: inv.email });
-    const refreshToken = generateRefreshToken({ userId, companyId: inv.company_id, email: inv.email });
+    const accessToken = generateAccessToken({ userId, companyId: inv.company_id, email: normalizedEmail });
+    const refreshToken = generateRefreshToken({ userId, companyId: inv.company_id, email: normalizedEmail });
     run('INSERT INTO refresh_tokens (id, token, user_id, expires_at) VALUES (?, ?, ?, ?)',
       [uuid(), refreshToken, userId, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()]);
 
