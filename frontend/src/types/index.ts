@@ -72,7 +72,8 @@ export interface DashboardData {
   recentActivities: RecentActivity[];
   leadsBySource: { source: string; count: number }[];
   opportunitiesByStage: { stageId: string; stageName: string; color: string; count: number; value: number }[];
-  monthlyLeads: { month: string; leads: number }[];
+  timeline: { label: string; leads: number }[];
+  isDaily: boolean;
 }
 
 export interface RecentActivity {
