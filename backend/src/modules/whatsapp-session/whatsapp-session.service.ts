@@ -146,10 +146,12 @@ export class WhatsAppSessionService {
   }
 
   private async handleIncoming(companyId: string, phone: string, message: string) {
+    console.log(`[WA] Mensaje entrante — empresa:${companyId} phone:${phone} msg:"${message.slice(0,50)}"`);
     try {
       // 1. Process via inbox service (store message + CRM deduplication)
       const { whatsAppInboxService } = require('../whatsapp-inbox/whatsapp-inbox.service');
       whatsAppInboxService.processIncoming(companyId, phone, message);
+      console.log('[WA] processIncoming OK');
 
       // 2. Generate AI reply if agent is active (MODO IA)
       const { get } = require('../../database/db');
@@ -157,21 +159,27 @@ export class WhatsAppSessionService {
       const companyName = company?.name || 'la empresa';
 
       const { whatsAppAgentService } = require('../whatsapp-agent/whatsapp-agent.service');
+      console.log('[WA] Llamando generateReply...');
       const botReply: string | null = await whatsAppAgentService.generateReply(
         companyId, companyName, phone, message
       );
+      console.log(`[WA] generateReply result: ${botReply ? `"${botReply.slice(0,60)}..."` : 'null'}`);
 
       // 3. Send and store bot reply if any
       if (botReply) {
         const session = sessions.get(companyId);
+        console.log(`[WA] Sesión para envío: status=${session?.status}`);
         if (session?.socket && session.status === 'connected') {
           const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
           await session.socket.sendMessage(jid, { text: botReply });
           whatsAppInboxService.storeMessage(companyId, phone, 'outbound', botReply, true);
+          console.log('[WA] Respuesta enviada OK');
+        } else {
+          console.warn('[WA] No se pudo enviar: sesión no conectada');
         }
       }
     } catch (err) {
-      console.error('[WA] Error procesando mensaje entrante:', (err as Error).message);
+      console.error('[WA] Error procesando mensaje entrante:', (err as Error).message, (err as Error).stack?.split('\n')[1]);
     }
   }
 
