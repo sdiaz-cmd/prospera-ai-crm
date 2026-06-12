@@ -131,7 +131,9 @@ export class WhatsAppSessionService {
         const jid = msg.key.remoteJid || '';
         if (jid.endsWith('@g.us')) continue; // skip groups
 
+        // Normalize phone for CRM (strip suffix/domain), but keep original JID for reply
         const phone = jid.replace('@s.whatsapp.net', '').replace('@lid', '').split(':')[0];
+        const replyJid = jid; // Always reply to the exact JID we received from
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
@@ -139,14 +141,14 @@ export class WhatsAppSessionService {
           '';
 
         if (phone && text) {
-          this.handleIncoming(companyId, phone, text).catch(console.error);
+          this.handleIncoming(companyId, replyJid, phone, text).catch(console.error);
         }
       }
     });
   }
 
-  private async handleIncoming(companyId: string, phone: string, message: string) {
-    console.log(`[WA] Mensaje entrante — empresa:${companyId} phone:${phone} msg:"${message.slice(0,50)}"`);
+  private async handleIncoming(companyId: string, replyJid: string, phone: string, message: string) {
+    console.log(`[WA] Mensaje entrante — empresa:${companyId} replyJid:${replyJid} phone:${phone} msg:"${message.slice(0,50)}"`);
     try {
       // 1. Process via inbox service (store message + CRM deduplication)
       const { whatsAppInboxService } = require('../whatsapp-inbox/whatsapp-inbox.service');
@@ -168,10 +170,9 @@ export class WhatsAppSessionService {
       // 3. Send and store bot reply if any
       if (botReply) {
         const session = sessions.get(companyId);
-        console.log(`[WA] Sesión para envío: status=${session?.status}`);
+        console.log(`[WA] Sesión para envío: status=${session?.status} replyJid:${replyJid}`);
         if (session?.socket && session.status === 'connected') {
-          const jid = phone.includes('@') ? phone : `${phone}@s.whatsapp.net`;
-          await session.socket.sendMessage(jid, { text: botReply });
+          await session.socket.sendMessage(replyJid, { text: botReply });
           whatsAppInboxService.storeMessage(companyId, phone, 'outbound', botReply, true);
           console.log('[WA] Respuesta enviada OK');
         } else {
