@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --experimental-sqlite node_modules/.bin/tsx src/server.ts",
     "dev:watch": "node --experimental-sqlite node_modules/.bin/tsx watch src/server.ts",
-    "build": "npx tsc",
+    "build": "node_modules/.bin/tsc",
     "start": "node --experimental-sqlite dist/server.js",
     "db:setup": "node --experimental-sqlite node_modules/.bin/tsx src/database/setup.ts"
   },
@@ -29,6 +29,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
+    "typescript": "^5.4.3",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5"
   },
@@ -43,7 +44,6 @@
     "@types/node": "^22.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/uuid": "^9.0.8",
-    "tsx": "^4.7.2",
-    "typescript": "^5.4.3"
+    "tsx": "^4.7.2"
   }
 }
