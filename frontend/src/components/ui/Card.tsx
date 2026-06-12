@@ -9,7 +9,7 @@ export function Card({ className, padding = 'md', ...props }: CardProps) {
   const paddings = { none: '', sm: 'p-4', md: 'p-6', lg: 'p-8' };
   return (
     <div
-      className={cn('bg-white rounded-xl border border-gray-200 shadow-card', paddings[padding], className)}
+      className={cn('bg-white rounded-xl border border-gray-200/80 shadow-card transition-shadow duration-200', paddings[padding], className)}
       {...props}
     />
   );

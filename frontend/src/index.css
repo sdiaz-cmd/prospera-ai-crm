@@ -17,30 +17,72 @@
     font-size: 14px;
     line-height: 1.5;
     color: #111827;
-    background-color: #f9fafb;
+    background-color: #f4f6f9;
   }
 
+  /* Refined scrollbar */
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
-
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-
   ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: #e5e7eb;
     border-radius: 10px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+    background: #d1d5db;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@layer components {
+  /* Card with smooth hover lift */
+  .card-interactive {
+    @apply bg-white rounded-xl border border-gray-200/80 shadow-card transition-all duration-200 ease-out;
+  }
+  .card-interactive:hover {
+    @apply shadow-card-hover -translate-y-[1px];
+  }
+
+  /* Smooth focus ring for inputs */
+  .input-focus {
+    @apply transition-all duration-150 outline-none;
+  }
+  .input-focus:focus {
+    @apply ring-2 ring-blue-500/30 border-blue-400;
+  }
+
+  /* Sidebar nav active glow */
+  .nav-active-glow {
+    position: relative;
+  }
+  .nav-active-glow::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 60%;
+    background: #60a5fa;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Badge pill */
+  .badge-pill {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* KPI card value */
+  .kpi-value {
+    @apply text-2xl font-bold text-gray-900 tracking-tight;
   }
 }

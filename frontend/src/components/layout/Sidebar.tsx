@@ -21,8 +21,80 @@ const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
   enterprise: { crm: true, erp: true,  marketing: true,  landing: true,  ai: true  },
 };
 
+const PLAN_COLORS: Record<PlanName, string> = {
+  trial: 'text-gray-400',
+  starter: 'text-blue-400',
+  growth: 'text-emerald-400',
+  enterprise: 'text-violet-400',
+};
+
 function getPlanFeatures(plan: string) {
   return PLAN_FEATURES[plan as PlanName] ?? PLAN_FEATURES.trial;
+}
+function getPlanColor(plan: string) {
+  return PLAN_COLORS[plan as PlanName] ?? PLAN_COLORS.trial;
+}
+
+// ─── Minimalist PROSPERA Logo Mark ────────────────────────────────────────────
+
+function ProspLogo({ size = 32 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="flex-shrink-0"
+    >
+      <defs>
+        <linearGradient id="prosp-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#60A5FA" />
+          <stop offset="100%" stopColor="#2563EB" />
+        </linearGradient>
+      </defs>
+      {/* Rounded square background */}
+      <rect width="32" height="32" rx="8" fill="url(#prosp-grad)" />
+      {/* P — vertical bar */}
+      <rect x="8.5" y="7" width="3.5" height="18" rx="1.75" fill="white" />
+      {/* P — bowl (semicircle right side) */}
+      <path
+        d="M12 7h3.5a5.5 5.5 0 0 1 0 11H12V7z"
+        fill="white"
+        fillOpacity="0.95"
+      />
+      {/* Growth accent — small rising dot */}
+      <circle cx="22.5" cy="8.5" r="2" fill="white" fillOpacity="0.45" />
+      <circle cx="22.5" cy="8.5" r="1.1" fill="white" fillOpacity="0.8" />
+    </svg>
+  );
+}
+
+// ─── Collapsed logo mark (24px, no label) ─────────────────────────────────────
+
+function ProspLogoSmall() {
+  return (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="flex-shrink-0"
+    >
+      <defs>
+        <linearGradient id="prosp-grad-sm" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#60A5FA" />
+          <stop offset="100%" stopColor="#2563EB" />
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#prosp-grad-sm)" />
+      <rect x="8.5" y="7" width="3.5" height="18" rx="1.75" fill="white" />
+      <path d="M12 7h3.5a5.5 5.5 0 0 1 0 11H12V7z" fill="white" fillOpacity="0.95" />
+      <circle cx="22.5" cy="8.5" r="2" fill="white" fillOpacity="0.45" />
+      <circle cx="22.5" cy="8.5" r="1.1" fill="white" fillOpacity="0.8" />
+    </svg>
+  );
 }
 
 interface NavItem {
@@ -92,33 +164,44 @@ export function Sidebar({ collapsed }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-screen bg-gray-900 flex flex-col transition-all duration-300 z-40',
+        'fixed left-0 top-0 h-screen flex flex-col transition-all duration-300 z-40',
+        'bg-[#0d1117] border-r border-white/[0.06]',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className={cn('flex items-center gap-3 px-4 py-5 border-b border-gray-800', collapsed && 'justify-center')}>
-        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-500/30">
-          <span className="text-white font-bold text-sm">P</span>
-        </div>
-        {!collapsed && (
-          <div>
-            <span className="text-white font-bold text-base">PROSPERA</span>
-          </div>
+      <div
+        className={cn(
+          'flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]',
+          collapsed && 'justify-center px-0'
+        )}
+      >
+        {collapsed ? (
+          <ProspLogoSmall />
+        ) : (
+          <>
+            <ProspLogo size={32} />
+            <div className="leading-tight">
+              <span className="text-white font-bold text-[15px] tracking-wide">PROSPERA</span>
+              <span className="text-blue-400/70 font-semibold text-[15px] tracking-wide">.AI</span>
+            </div>
+          </>
         )}
       </div>
 
       {/* Empresa activa */}
       {!collapsed && company && (
-        <div className="px-4 py-3 border-b border-gray-800">
-          <p className="text-xs text-gray-500 mb-1">Empresa activa</p>
+        <div className="px-4 py-3 border-b border-white/[0.06]">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-600 mb-1">Empresa activa</p>
           <p className="text-sm font-medium text-gray-200 truncate">{company.name}</p>
-          <span className="text-xs text-blue-400 capitalize">{company.plan}</span>
+          <span className={cn('text-xs font-medium capitalize', getPlanColor(company.plan))}>
+            {company.plan}
+          </span>
         </div>
       )}
 
       {/* Navegación */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
         {navItems.map((item) => (
           <NavGroup
             key={item.to}
@@ -131,13 +214,16 @@ export function Sidebar({ collapsed }: SidebarProps) {
       </nav>
 
       {/* Configuración */}
-      <div className="border-t border-gray-800 p-2 space-y-0.5">
+      <div className="border-t border-white/[0.06] p-2 space-y-0.5">
         <NavLink
           to="/settings"
           className={({ isActive }) =>
             cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-              isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100',
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
+              'border-l-2',
+              isActive
+                ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80'
+                : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
               collapsed && 'justify-center'
             )
           }
@@ -150,14 +236,14 @@ export function Sidebar({ collapsed }: SidebarProps) {
         {!collapsed && user && (
           <NavLink
             to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-all duration-200"
           >
             <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-200 truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-xs text-gray-600 truncate">{user.email}</p>
             </div>
           </NavLink>
         )}
@@ -191,8 +277,8 @@ function NavGroup({
         <button
           onClick={handleLockedClick}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors opacity-50 cursor-pointer',
-            'text-gray-400 hover:bg-gray-800 hover:text-gray-300',
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 opacity-40 cursor-pointer border-l-2 border-transparent',
+            'text-gray-500 hover:bg-white/[0.04] hover:text-gray-400',
             collapsed && 'justify-center'
           )}
         >
@@ -200,7 +286,7 @@ function NavGroup({
           {!collapsed && (
             <>
               <span className="flex-1 text-left">{item.label}</span>
-              <Lock className="w-3.5 h-3.5 text-gray-600" />
+              <Lock className="w-3.5 h-3.5 text-gray-700" />
             </>
           )}
         </button>
@@ -212,9 +298,11 @@ function NavGroup({
         to={item.to}
         className={({ isActive }) =>
           cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors relative group',
-            isActive ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100',
-            item.soon && 'opacity-60 cursor-not-allowed pointer-events-none',
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 relative group border-l-2',
+            isActive
+              ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80 font-medium'
+              : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
+            item.soon && 'opacity-50 cursor-not-allowed pointer-events-none',
             collapsed && 'justify-center'
           )
         }
@@ -237,12 +325,13 @@ function NavGroup({
               </span>
             ) : null}
             {item.soon && (
-              <span className="text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">Pronto</span>
+              <span className="text-xs bg-white/[0.07] text-gray-500 px-1.5 py-0.5 rounded">Pronto</span>
             )}
           </>
         )}
+        {/* Collapsed tooltip */}
         {collapsed && (
-          <div className="absolute left-full ml-2 bg-gray-800 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+          <div className="absolute left-full ml-3 bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 shadow-lg border border-white/10">
             {item.label}
           </div>
         )}
@@ -258,8 +347,8 @@ function NavGroup({
       <button
         onClick={handleLockedClick}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors opacity-50',
-          'text-gray-500 hover:bg-gray-800 hover:text-gray-300',
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 opacity-40 border-l-2 border-transparent',
+          'text-gray-500 hover:bg-white/[0.04] hover:text-gray-400',
           collapsed && 'justify-center'
         )}
       >
@@ -267,7 +356,7 @@ function NavGroup({
         {!collapsed && (
           <>
             <span className="flex-1 font-medium text-left">{item.label}</span>
-            <Lock className="w-3.5 h-3.5 text-gray-600" />
+            <Lock className="w-3.5 h-3.5 text-gray-700" />
           </>
         )}
       </button>
@@ -279,31 +368,35 @@ function NavGroup({
       <button
         onClick={() => setOpen(o => !o)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-          isGroupActive ? 'text-gray-100' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-100',
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 border-l-2 border-transparent',
+          isGroupActive
+            ? 'text-gray-200 font-medium'
+            : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-300',
           collapsed && 'justify-center'
         )}
       >
         <item.icon className="w-5 h-5 flex-shrink-0" />
         {!collapsed && (
           <>
-            <span className="flex-1 font-medium text-left">{item.label}</span>
-            <ChevronRight className={cn('w-4 h-4 transition-transform', open && 'rotate-90')} />
+            <span className="flex-1 text-left">{item.label}</span>
+            <ChevronRight className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-90')} />
           </>
         )}
       </button>
 
       {!collapsed && open && (
-        <div className="ml-4 pl-3 border-l border-gray-700 mt-0.5 space-y-0.5">
+        <div className="ml-4 pl-3 border-l border-white/[0.08] mt-0.5 space-y-0.5">
           {item.children.map((child) => (
             <NavLink
               key={child.to}
               to={child.to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                  isActive ? 'bg-primary-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100',
-                  child.soon && 'opacity-60 cursor-not-allowed pointer-events-none'
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 border-l-2',
+                  isActive
+                    ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80 font-medium'
+                    : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
+                  child.soon && 'opacity-50 cursor-not-allowed pointer-events-none'
                 )
               }
               onClick={child.soon ? (e) => e.preventDefault() : undefined}
@@ -311,7 +404,7 @@ function NavGroup({
               <child.icon className="w-4 h-4 flex-shrink-0" />
               <span>{child.label}</span>
               {child.soon && (
-                <span className="ml-auto text-xs bg-gray-700 text-gray-400 px-1 py-0.5 rounded">Pronto</span>
+                <span className="ml-auto text-xs bg-white/[0.07] text-gray-500 px-1 py-0.5 rounded">Pronto</span>
               )}
             </NavLink>
           ))}
