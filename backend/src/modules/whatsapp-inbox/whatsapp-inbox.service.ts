@@ -126,8 +126,7 @@ export class WhatsAppInboxService {
     run(
       `UPDATE whatsapp_conversations
        SET last_message = ?, last_message_at = datetime('now'),
-           unread_count = CASE WHEN ? = 'inbound' THEN unread_count + 1 ELSE unread_count END,
-           updated_at = datetime('now')
+           unread_count = CASE WHEN ? = 'inbound' THEN unread_count + 1 ELSE unread_count END
        WHERE company_id = ? AND phone = ?`,
       [body.slice(0, 100), direction, companyId, phone]
     );
