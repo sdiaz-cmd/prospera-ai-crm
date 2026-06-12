@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --experimental-sqlite node_modules/.bin/tsx src/server.ts",
     "dev:watch": "node --experimental-sqlite node_modules/.bin/tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "node --experimental-sqlite dist/server.js",
     "db:setup": "node --experimental-sqlite node_modules/.bin/tsx src/database/setup.ts"
   },
