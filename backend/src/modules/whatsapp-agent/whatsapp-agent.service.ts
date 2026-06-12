@@ -141,56 +141,48 @@ export class WhatsAppAgentService {
       return null;
     }
 
-    const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      console.error('[WA Agent] OPENAI_API_KEY no configurada — agente IA desactivado');
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) {
+      console.error('[WA Agent] ANTHROPIC_API_KEY no configurada');
       return null;
     }
 
     const convKey = `${companyId}:${phone}`;
     const conv = getConv(convKey);
 
-    // Add incoming message to history
     conv.messages.push({ role: 'user', content: incomingMessage });
-
-    // Keep last 12 messages to avoid token overflow
     if (conv.messages.length > 12) conv.messages = conv.messages.slice(-12);
 
     const systemPrompt = this.buildSystemPrompt(config, companyName);
 
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openaiKey}`,
-          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...conv.messages,
-          ],
+          model: 'claude-haiku-4-5-20251001',
           max_tokens: 300,
-          temperature: 0.7,
+          system: systemPrompt,
+          messages: conv.messages,
         }),
       });
 
       if (!res.ok) {
         const errBody = await res.text();
-        throw new Error(`OpenAI error ${res.status}: ${errBody}`);
+        throw new Error(`Anthropic error ${res.status}: ${errBody}`);
       }
 
       const data = await res.json() as any;
-      const reply: string = data.choices?.[0]?.message?.content?.trim() || '';
+      const reply: string = data.content?.[0]?.text?.trim() || '';
 
-      if (reply) {
-        conv.messages.push({ role: 'assistant', content: reply });
-      }
-
+      if (reply) conv.messages.push({ role: 'assistant', content: reply });
       return reply || null;
     } catch (err) {
-      console.error('[WA Agent] Error OpenAI:', (err as Error).message);
+      console.error('[WA Agent] Error Anthropic:', (err as Error).message);
       return null;
     }
   }
