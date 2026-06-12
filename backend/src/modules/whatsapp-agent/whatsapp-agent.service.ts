@@ -136,10 +136,16 @@ export class WhatsAppAgentService {
     incomingMessage: string
   ): Promise<string | null> {
     const config = this.getConfig(companyId);
-    if (!config || !config.isActive) return null;
+    if (!config || !config.isActive) {
+      console.log(`[WA Agent] Agente inactivo para empresa ${companyId}`);
+      return null;
+    }
 
     const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) return null;
+    if (!openaiKey) {
+      console.error('[WA Agent] OPENAI_API_KEY no configurada — agente IA desactivado');
+      return null;
+    }
 
     const convKey = `${companyId}:${phone}`;
     const conv = getConv(convKey);
@@ -165,12 +171,15 @@ export class WhatsAppAgentService {
             { role: 'system', content: systemPrompt },
             ...conv.messages,
           ],
-          max_tokens: 200,
+          max_tokens: 300,
           temperature: 0.7,
         }),
       });
 
-      if (!res.ok) throw new Error(`OpenAI error: ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`OpenAI error ${res.status}: ${errBody}`);
+      }
 
       const data = await res.json() as any;
       const reply: string = data.choices?.[0]?.message?.content?.trim() || '';
@@ -181,7 +190,7 @@ export class WhatsAppAgentService {
 
       return reply || null;
     } catch (err) {
-      console.error('[WA Agent] Error GPT:', (err as Error).message);
+      console.error('[WA Agent] Error OpenAI:', (err as Error).message);
       return null;
     }
   }
