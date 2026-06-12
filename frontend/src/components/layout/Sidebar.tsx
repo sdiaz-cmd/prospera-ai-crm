@@ -48,8 +48,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const { data: waUnread } = useQuery<{ count: number }>({
     queryKey: ['wa-unread-sidebar'],
     queryFn: () => api.get('/whatsapp/unread-count').then(r => r.data.data),
-    refetchInterval: 10000,
-    staleTime: 5000,
+    refetchInterval: 60000,
+    staleTime: 30000,
   });
   const unreadCount = waUnread?.count ?? 0;
 

@@ -82,8 +82,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200, message: { success: false, message: 'Demasiadas solicitudes' } });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { success: false, message: 'Demasiados intentos de autenticación' } });
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, message: { success: false, message: 'Demasiadas solicitudes' } });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: 'Demasiados intentos de autenticación' } });
 
 app.use('/api', limiter);
 app.use('/api/auth/login', authLimiter);

@@ -68,14 +68,14 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
   const { data: conversations = [], isLoading: loadingConvs } = useQuery<WaConversation[]>({
     queryKey: ['wa-conversations'],
     queryFn: () => api.get('/whatsapp/conversations').then(r => r.data.data),
-    refetchInterval: 5000,
+    refetchInterval: 12000,
   });
 
   const { data: messages = [], isLoading: loadingMsgs } = useQuery<WaMessage[]>({
     queryKey: ['wa-messages', selectedPhone],
     queryFn: () => api.get(`/whatsapp/conversations/${selectedPhone}`).then(r => r.data.data),
     enabled: !!selectedPhone,
-    refetchInterval: 3000,
+    refetchInterval: 8000,
   });
 
   const sendMut = useMutation({
@@ -524,7 +524,7 @@ export function WhatsAppAgentPage() {
   const { data: unread } = useQuery<{ count: number }>({
     queryKey: ['wa-unread'],
     queryFn: () => api.get('/whatsapp/unread-count').then(r => r.data.data),
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   const toggleModeMut = useMutation({
