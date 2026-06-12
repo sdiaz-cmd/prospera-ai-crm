@@ -131,7 +131,7 @@ export class WhatsAppSessionService {
         const jid = msg.key.remoteJid || '';
         if (jid.endsWith('@g.us')) continue; // skip groups
 
-        const phone = jid.replace('@s.whatsapp.net', '');
+        const phone = jid.replace('@s.whatsapp.net', '').replace('@lid', '');
         const text =
           msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
