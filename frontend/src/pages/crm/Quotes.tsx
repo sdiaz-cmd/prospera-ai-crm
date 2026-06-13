@@ -106,11 +106,12 @@ function LineItemsEditor({ items, onChange }: {
 
 // ─── Totals summary ───────────────────────────────────────────────
 
-function TotalsSummary({ items, discountType, discountValue, taxRate, onChange }: {
+function TotalsSummary({ items, discountType, discountValue, taxRate, currency, onChange }: {
   items: QuoteItem[];
   discountType: string;
   discountValue: number;
   taxRate: number;
+  currency: string;
   onChange: (field: string, value: string | number) => void;
 }) {
   const subtotal = items.reduce((sum, i) => {
@@ -121,13 +122,14 @@ function TotalsSummary({ items, discountType, discountValue, taxRate, onChange }
   const taxable = subtotal - discountAmt;
   const taxAmt = taxable * taxRate / 100;
   const total = taxable + taxAmt;
+  const fc = (n: number) => formatCurrency(n, currency);
 
   return (
     <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
       <div className="flex justify-end">
         <div className="w-72 space-y-2">
           <div className="flex justify-between text-sm text-gray-600">
-            <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
+            <span>Subtotal</span><span>{fc(subtotal)}</span>
           </div>
           <div className="flex items-center justify-between text-sm text-gray-600 gap-2">
             <span>Descuento</span>
@@ -142,22 +144,22 @@ function TotalsSummary({ items, discountType, discountValue, taxRate, onChange }
                 value={discountValue}
                 onChange={e => onChange('discountValue', Number(e.target.value))}
               />
-              <span className="text-xs text-gray-400">({formatCurrency(discountAmt)})</span>
+              <span className="text-xs text-gray-400">({fc(discountAmt)})</span>
             </div>
           </div>
           <div className="flex items-center justify-between text-sm text-gray-600 gap-2">
-            <span>IVA (%)</span>
+            <span>Impuesto (%)</span>
             <div className="flex items-center gap-1.5">
               <input type="number" min={0} max={100} step={0.1}
                 className="w-20 border border-gray-200 rounded px-2 py-0.5 text-xs text-right"
                 value={taxRate}
                 onChange={e => onChange('taxRate', Number(e.target.value))}
               />
-              <span className="text-xs text-gray-400">({formatCurrency(taxAmt)})</span>
+              <span className="text-xs text-gray-400">({fc(taxAmt)})</span>
             </div>
           </div>
           <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-200">
-            <span>Total</span><span>{formatCurrency(total)}</span>
+            <span>Total {currency}</span><span>{fc(total)}</span>
           </div>
         </div>
       </div>
@@ -173,8 +175,8 @@ function QuoteForm({ initial, onSave, onCancel }: {
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<Partial<Quote>>({
-    title: '', status: 'draft', currency: 'MXN',
-    discountType: 'percent', discountValue: 0, taxRate: 16,
+    title: '', status: 'draft', currency: 'CLP',
+    discountType: 'percent', discountValue: 0, taxRate: 0,
     notes: '', terms: '',
     ...initial,
   });
@@ -206,6 +208,20 @@ function QuoteForm({ initial, onSave, onCancel }: {
             ))}
           </select>
         </div>
+
+        {/* Moneda */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+          <select
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            value={form.currency || 'CLP'}
+            onChange={e => set('currency', e.target.value)}
+          >
+            <option value="CLP">🇨🇱 Peso Chileno (CLP)</option>
+            <option value="USD">🇺🇸 Dólar Estadounidense (USD)</option>
+          </select>
+        </div>
+
         <Input label="Válida hasta" type="date"
           value={form.validUntil ? form.validUntil.split('T')[0] : ''}
           onChange={e => set('validUntil', e.target.value)} />
@@ -219,7 +235,8 @@ function QuoteForm({ initial, onSave, onCancel }: {
           items={items}
           discountType={form.discountType || 'percent'}
           discountValue={form.discountValue || 0}
-          taxRate={form.taxRate ?? 16}
+          taxRate={form.taxRate ?? 0}
+          currency={form.currency || 'CLP'}
           onChange={setField}
         />
       </div>
@@ -260,7 +277,7 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
   const Icon = cfg.icon;
 
   const handleDownloadPDF = () => {
-    downloadQuotePDF(quote, company?.name ?? 'PROSPERA.AI', company?.currency ?? 'MXN');
+    downloadQuotePDF(quote, company?.name ?? 'PROSPERA.AI', quote.currency ?? 'CLP');
   };
 
   return (
@@ -366,9 +383,9 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
               <tr key={item.id || i} className="text-sm">
                 <td className="py-2.5 pr-4 text-gray-900">{item.description}</td>
                 <td className="py-2.5 text-right text-gray-600">{item.quantity}</td>
-                <td className="py-2.5 text-right text-gray-600">{formatCurrency(item.unitPrice)}</td>
+                <td className="py-2.5 text-right text-gray-600">{formatCurrency(item.unitPrice, quote.currency)}</td>
                 <td className="py-2.5 text-right text-gray-400">{item.discount || 0}%</td>
-                <td className="py-2.5 text-right font-medium text-gray-900">{formatCurrency(item.total || 0)}</td>
+                <td className="py-2.5 text-right font-medium text-gray-900">{formatCurrency(item.total || 0, quote.currency)}</td>
               </tr>
             ))}
           </tbody>
@@ -378,23 +395,24 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
         <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
           <div className="w-64 space-y-1.5 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>Subtotal</span><span>{formatCurrency(quote.subtotal)}</span>
+              <span>Subtotal</span><span>{formatCurrency(quote.subtotal, quote.currency)}</span>
             </div>
             {quote.discountValue > 0 && (
               <div className="flex justify-between text-gray-600">
                 <span>Descuento ({quote.discountType === 'percent' ? `${quote.discountValue}%` : '$'})</span>
                 <span className="text-red-500">-{formatCurrency(
-                  quote.discountType === 'fixed' ? quote.discountValue : quote.subtotal * quote.discountValue / 100
+                  quote.discountType === 'fixed' ? quote.discountValue : quote.subtotal * quote.discountValue / 100,
+                  quote.currency
                 )}</span>
               </div>
             )}
             {quote.taxRate > 0 && (
               <div className="flex justify-between text-gray-600">
-                <span>IVA ({quote.taxRate}%)</span><span>{formatCurrency(quote.taxAmount)}</span>
+                <span>Impuesto ({quote.taxRate}%)</span><span>{formatCurrency(quote.taxAmount, quote.currency)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-base text-gray-900 pt-2 border-t border-gray-200">
-              <span>Total</span><span>{formatCurrency(quote.total)}</span>
+              <span>Total</span><span>{formatCurrency(quote.total, quote.currency)}</span>
             </div>
           </div>
         </div>
@@ -450,7 +468,7 @@ function QuoteRow({ quote, onSelect, onDelete, onChangeStatus }: {
         {quote.accountName && <p className="text-xs text-gray-400">{quote.accountName}</p>}
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-bold text-gray-900">{formatCurrency(quote.total)}</p>
+        <p className="text-sm font-bold text-gray-900">{formatCurrency(quote.total, quote.currency)}</p>
         {quote.validUntil && (
           <p className="text-xs text-gray-400 mt-0.5">
             Vence: {formatDate(quote.validUntil)}
