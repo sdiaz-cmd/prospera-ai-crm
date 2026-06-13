@@ -89,13 +89,25 @@ export function Dashboard() {
     return { startDate: startOfDay(rangeFrom), endDate: endOfDay(rangeTo) };
   }, [mode, selectedDay, selectedMonth, rangeFrom, rangeTo]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-overview', startDate, endDate],
     queryFn: () => dashboardService.getOverview(startDate, endDate),
     refetchInterval: 60000,
+    retry: 1,
+    retryDelay: 1000,
   });
 
   if (isLoading) return <LoadingSpinner message="Cargando dashboard..." />;
+  if (isError || !data) return (
+    <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+      <AlertCircle className="w-10 h-10 text-gray-300" />
+      <p className="text-sm font-medium text-gray-600">No se pudo cargar el dashboard</p>
+      <p className="text-xs text-gray-400">El servidor no está respondiendo. Railway puede estar reiniciando.</p>
+      <button onClick={() => window.location.reload()} className="mt-2 px-4 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+        Reintentar
+      </button>
+    </div>
+  );
 
   const kpis = data?.kpis;
   const sourceColors = ['#6366f1', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
