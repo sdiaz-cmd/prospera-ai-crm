@@ -465,7 +465,7 @@ function AppearanceTab() {
   const { theme, setTheme, language, setLanguage } = useAppStore();
   const { t } = useTranslation();
 
-  const themeOption = (value: 'light' | 'dark', label: string, Icon: React.ElementType) => (
+  const themeOption = (value: 'light' | 'dark', label: string, Icon: React.ComponentType<{ className?: string }>) => (
     <button
       onClick={() => setTheme(value)}
       className={cn(
@@ -528,7 +528,7 @@ function AppearanceTab() {
             </div>
           </div>
         </CardHeader>
-        <div className="flex gap-4">
+        <div className="flex gap-4 px-6 pb-6">
           {themeOption('light', t('appearance.light'), Sun)}
           {themeOption('dark',  t('appearance.dark'),  Moon)}
         </div>
@@ -547,7 +547,7 @@ function AppearanceTab() {
             </div>
           </div>
         </CardHeader>
-        <div className="flex gap-4">
+        <div className="flex gap-4 px-6 pb-6">
           {langOption('es', '🇨🇱', t('appearance.es'))}
           {langOption('en', '🇺🇸', t('appearance.en'))}
         </div>
