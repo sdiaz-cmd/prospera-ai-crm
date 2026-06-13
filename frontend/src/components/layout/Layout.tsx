@@ -3,17 +3,12 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { cn } from '@/utils/helpers';
-import { useAppStore } from '@/store/appStore';
 
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const theme = useAppStore(s => s.theme);
 
   return (
-    <div
-      className={cn('min-h-screen transition-colors duration-200', theme === 'dark' ? 'dark' : '')}
-      style={{ background: theme === 'dark' ? '#0d1117' : '#f0f2f7' }}
-    >
+    <div className="min-h-screen" style={{ background: '#f0f2f7' }}>
       <Sidebar collapsed={sidebarCollapsed} />
       <Header
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}

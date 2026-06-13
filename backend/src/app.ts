@@ -122,7 +122,7 @@ app.use(cors({
 // Límite general para la API — 300 req / 15 min por IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300,
+  max: 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Demasiadas solicitudes, intenta más tarde' },
@@ -132,7 +132,7 @@ const apiLimiter = rateLimit({
 // Login / registro — 20 intentos / 15 min por IP (previene brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Demasiados intentos de autenticación, espera 15 minutos' },

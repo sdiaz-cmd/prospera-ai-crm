@@ -10,7 +10,6 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
 import { useAuthStore } from '@/store/authStore';
-import { useTranslation } from '@/i18n/useTranslation';
 import { Avatar } from '../ui/Avatar';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -257,7 +256,6 @@ function CollapsibleSection({
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { user, company } = useAuthStore();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const features = getPlanFeatures(company?.plan || 'trial');
   const planBadge = getPlanBadge(company?.plan || 'trial');
 
@@ -325,94 +323,94 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5 sidebar-scroll">
 
         {/* Dashboard — siempre visible */}
-        <NavItem to="/dashboard" icon={LayoutDashboard} label={t('nav.dashboard')} collapsed={collapsed} />
+        <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
 
         {/* CRM */}
         {!collapsed && <div className="pt-3 pb-1 px-1">
-          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">{t('nav.crm')}</span>
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">CRM</span>
         </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
 
         <CollapsibleSection
-          label={t('nav.crm')}
+          label="CRM"
           icon={Target}
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
           defaultOpen={true}
           items={[
-            { to: '/crm/leads',         icon: UserCircle,  label: t('nav.leads') },
-            { to: '/crm/contacts',      icon: Users,       label: t('nav.contacts') },
-            { to: '/crm/accounts',      icon: Building2,   label: t('nav.accounts') },
-            { to: '/crm/opportunities', icon: Target,      label: t('nav.opportunities') },
-            { to: '/crm/activities',    icon: Zap,         label: t('nav.activities') },
-            { to: '/crm/tasks',         icon: CheckSquare, label: t('nav.tasks') },
-            { to: '/crm/quotes',        icon: FileText,    label: t('nav.quotes') },
+            { to: '/crm/leads',         icon: UserCircle,  label: 'Leads' },
+            { to: '/crm/contacts',      icon: Users,       label: 'Contactos' },
+            { to: '/crm/accounts',      icon: Building2,   label: 'Empresas' },
+            { to: '/crm/opportunities', icon: Target,      label: 'Oportunidades' },
+            { to: '/crm/activities',    icon: Zap,         label: 'Actividades' },
+            { to: '/crm/tasks',         icon: CheckSquare, label: 'Tareas' },
+            { to: '/crm/quotes',        icon: FileText,    label: 'Cotizaciones' },
           ]}
         />
 
         {/* ERP */}
         {!collapsed && <div className="pt-3 pb-1 px-1">
-          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">{t('nav.finance')}</span>
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Finanzas & ERP</span>
         </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
 
         <CollapsibleSection
-          label={t('nav.finance')}
+          label="Finanzas & ERP"
           icon={ReceiptText}
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
           items={[
-            { to: '/erp/products',   icon: Package,     label: t('nav.products'),   feature: 'erp' },
-            { to: '/erp/suppliers',  icon: Truck,       label: t('nav.suppliers'),  feature: 'erp' },
-            { to: '/erp/invoices',   icon: ReceiptText, label: t('nav.invoices'),   feature: 'erp' },
-            { to: '/erp/inventory',  icon: Boxes,       label: t('nav.inventory'),  feature: 'erp' },
+            { to: '/erp/products',   icon: Package,     label: 'Productos',   feature: 'erp' },
+            { to: '/erp/suppliers',  icon: Truck,       label: 'Proveedores', feature: 'erp' },
+            { to: '/erp/invoices',   icon: ReceiptText, label: 'Facturas',    feature: 'erp' },
+            { to: '/erp/inventory',  icon: Boxes,       label: 'Inventario',  feature: 'erp' },
           ]}
         />
 
         {/* Marketing */}
         {!collapsed && <div className="pt-3 pb-1 px-1">
-          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">{t('nav.marketing')}</span>
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Marketing</span>
         </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
 
         <CollapsibleSection
-          label={t('nav.marketing')}
+          label="Marketing"
           icon={Megaphone}
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
           items={[
-            { to: '/marketing', icon: Megaphone, label: t('nav.campaigns'),  feature: 'marketing' },
-            { to: '/landing',   icon: Globe,     label: t('nav.landing'),    feature: 'landing' },
+            { to: '/marketing', icon: Megaphone, label: 'Campañas',      feature: 'marketing' },
+            { to: '/landing',   icon: Globe,     label: 'Landing Pages', feature: 'landing' },
           ]}
         />
 
         {/* Herramientas */}
         {!collapsed && <div className="pt-3 pb-1 px-1">
-          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">{t('nav.tools')}</span>
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Herramientas</span>
         </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
 
         <CollapsibleSection
-          label={t('nav.tools')}
+          label="Herramientas"
           icon={Zap}
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
           items={[
-            { to: '/whatsapp-agent', icon: MessageCircle, label: t('nav.whatsapp'), badge: unreadCount > 0 ? unreadCount : undefined },
-            { to: '/ai',             icon: Bot,            label: t('nav.ai'),        feature: 'ai' },
-            { to: '/reports',        icon: BarChart3,      label: t('nav.reports') },
-            { to: '/users',          icon: Users2,         label: t('nav.users') },
+            { to: '/whatsapp-agent', icon: MessageCircle, label: 'WhatsApp Agent',    badge: unreadCount > 0 ? unreadCount : undefined },
+            { to: '/ai',             icon: Bot,           label: 'IA & Automatización', feature: 'ai' },
+            { to: '/reports',        icon: BarChart3,     label: 'Reportes' },
+            { to: '/users',          icon: Users2,        label: 'Usuarios' },
           ]}
         />
       </nav>
 
       {/* ── Bottom ── */}
       <div className="relative px-2 py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}>
-        <NavItem to="/settings" icon={Settings} label={t('nav.settings')} collapsed={collapsed} />
+        <NavItem to="/settings" icon={Settings} label="Configuración" collapsed={collapsed} />
 
         {!collapsed && user && (
           <NavLink

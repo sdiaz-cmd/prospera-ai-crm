@@ -3,8 +3,6 @@ import { Bell, Search, Menu, LogOut, User, Settings, ChevronDown } from 'lucide-
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
-import { useAppStore } from '@/store/appStore';
-import { useTranslation } from '@/i18n/useTranslation';
 import { authService } from '@/services/auth.service';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/utils/helpers';
@@ -16,12 +14,8 @@ interface HeaderProps {
 
 export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
   const { user, company, clearAuth, refreshToken } = useAuthStore();
-  const theme = useAppStore(s => s.theme);
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const isDark = theme === 'dark';
 
   const handleLogout = async () => {
     try {
@@ -40,13 +34,11 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         sidebarCollapsed ? 'left-[60px]' : 'left-[240px]'
       )}
       style={{
-        background: isDark ? 'rgba(22,27,39,0.92)' : 'rgba(255,255,255,0.82)',
+        background: 'rgba(255,255,255,0.82)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)',
-        boxShadow: isDark
-          ? '0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 8px rgba(0,0,0,0.20)'
-          : '0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 8px rgba(0,0,0,0.04)',
+        borderBottom: '1px solid rgba(0,0,0,0.07)',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 8px rgba(0,0,0,0.04)',
       }}
     >
       {/* Sidebar toggle */}
@@ -66,21 +58,21 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           />
           <input
             type="text"
-            placeholder={t('common.search')}
+            placeholder="Buscar leads, contactos, oportunidades..."
             className="w-full pl-9 pr-12 py-[7px] text-[13px] rounded-full transition-all duration-150 outline-none"
             style={{
-              background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-              border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.08)',
-              color: isDark ? '#e2e8f0' : '#374151',
+              background: 'rgba(0,0,0,0.05)',
+              border: '1px solid rgba(0,0,0,0.08)',
+              color: '#374151',
             }}
             onFocus={e => {
-              e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.10)' : '#fff';
+              e.currentTarget.style.background = '#fff';
               e.currentTarget.style.borderColor = 'rgba(59,130,246,0.5)';
               e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)';
             }}
             onBlur={e => {
-              e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-              e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+              e.currentTarget.style.background = 'rgba(0,0,0,0.05)';
+              e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)';
               e.currentTarget.style.boxShadow = 'none';
             }}
           />
@@ -127,10 +119,10 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
               <div
                 className="absolute right-0 top-full mt-2 w-60 rounded-2xl overflow-hidden z-50"
                 style={{
-                  background: isDark ? 'rgba(22,27,39,0.97)' : 'rgba(255,255,255,0.96)',
+                  background: 'rgba(255,255,255,0.96)',
                   backdropFilter: 'blur(20px)',
-                  border: isDark ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(0,0,0,0.09)',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.12)',
+                  border: '1px solid rgba(0,0,0,0.09)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)',
                 }}
               >
                 {/* User info */}
@@ -147,8 +139,8 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
                 {/* Menu items */}
                 <div className="py-1.5">
                   {[
-                    { icon: User, label: t('common.profile'), onClick: () => { navigate('/profile'); setDropdownOpen(false); } },
-                    { icon: Settings, label: t('nav.settings'), onClick: () => { navigate('/settings'); setDropdownOpen(false); } },
+                    { icon: User, label: 'Mi Perfil', onClick: () => { navigate('/profile'); setDropdownOpen(false); } },
+                    { icon: Settings, label: 'Configuración', onClick: () => { navigate('/settings'); setDropdownOpen(false); } },
                   ].map(item => (
                     <button
                       key={item.label}
@@ -167,7 +159,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-red-600 hover:bg-red-50/80 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    {t('common.logout')}
+                    Cerrar Sesión
                   </button>
                 </div>
               </div>
