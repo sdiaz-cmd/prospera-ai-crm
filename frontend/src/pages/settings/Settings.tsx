@@ -1,24 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Globe, CreditCard, Shield, Bell, Zap, Copy, CheckCircle, MessageCircle, ArrowDownCircle, ArrowUpCircle, Telescope, KeyRound, Users, Wifi, WifiOff, RefreshCw, Smartphone } from 'lucide-react';
+import { Building2, Globe, CreditCard, Shield, Bell, Zap, Copy, CheckCircle, MessageCircle, ArrowDownCircle, ArrowUpCircle, Telescope, KeyRound, Users, Wifi, WifiOff, RefreshCw, Smartphone, Palette, Sun, Moon, Languages } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
+import { useAppStore } from '@/store/appStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { apolloService } from '@/services/crm.service';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { cn, PLAN_LABELS } from '@/utils/helpers';
-
-const tabs = [
-  { id: 'empresa', label: 'Empresa', icon: Building2 },
-  { id: 'plan', label: 'Plan y facturación', icon: CreditCard },
-  { id: 'seguridad', label: 'Seguridad', icon: Shield },
-  { id: 'notificaciones', label: 'Notificaciones', icon: Bell },
-  { id: 'integraciones', label: 'Integraciones', icon: Zap },
-];
 
 interface CompanyForm {
   name: string;
@@ -467,9 +461,105 @@ function IntegracionesTab() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+function AppearanceTab() {
+  const { theme, setTheme, language, setLanguage } = useAppStore();
+  const { t } = useTranslation();
+
+  const themeOption = (value: 'light' | 'dark', label: string, Icon: React.ElementType) => (
+    <button
+      onClick={() => setTheme(value)}
+      className={cn(
+        'flex-1 flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all duration-200 cursor-pointer',
+        theme === value
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+          : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+      )}
+    >
+      <div className={cn(
+        'w-12 h-12 rounded-xl flex items-center justify-center',
+        theme === value ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'
+      )}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <span className={cn('text-sm font-semibold', theme === value ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400')}>
+        {label}
+      </span>
+      {theme === value && (
+        <span className="w-2 h-2 rounded-full bg-blue-500" />
+      )}
+    </button>
+  );
+
+  const langOption = (value: 'es' | 'en', flag: string, label: string) => (
+    <button
+      onClick={() => setLanguage(value)}
+      className={cn(
+        'flex items-center gap-3 flex-1 p-4 rounded-2xl border-2 transition-all duration-200 cursor-pointer',
+        language === value
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+          : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20'
+      )}
+    >
+      <span className="text-2xl">{flag}</span>
+      <div className="text-left">
+        <p className={cn('text-sm font-semibold', language === value ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300')}>
+          {label}
+        </p>
+        <p className="text-xs text-gray-400">{value.toUpperCase()}</p>
+      </div>
+      {language === value && (
+        <div className="ml-auto w-2 h-2 rounded-full bg-blue-500" />
+      )}
+    </button>
+  );
+
+  return (
+    <div className="space-y-5">
+      {/* Theme */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg flex items-center justify-center">
+              <Palette className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <div>
+              <CardTitle>{t('appearance.theme')}</CardTitle>
+              <p className="text-xs text-gray-400 mt-0.5">{t('appearance.theme.desc')}</p>
+            </div>
+          </div>
+        </CardHeader>
+        <div className="flex gap-4">
+          {themeOption('light', t('appearance.light'), Sun)}
+          {themeOption('dark',  t('appearance.dark'),  Moon)}
+        </div>
+      </Card>
+
+      {/* Language */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg flex items-center justify-center">
+              <Languages className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <CardTitle>{t('appearance.language')}</CardTitle>
+              <p className="text-xs text-gray-400 mt-0.5">{t('appearance.language.desc')}</p>
+            </div>
+          </div>
+        </CardHeader>
+        <div className="flex gap-4">
+          {langOption('es', '🇨🇱', t('appearance.es'))}
+          {langOption('en', '🇺🇸', t('appearance.en'))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function Settings() {
   const [activeTab, setActiveTab] = useState('empresa');
   const { company } = useAuthStore();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: companyData } = useQuery({
@@ -498,11 +588,20 @@ export function Settings() {
 
   const planInfo = company?.plan ? PLAN_LABELS[company.plan] : null;
 
+  const tabs = [
+    { id: 'empresa',        label: t('settings.tab.empresa'),       icon: Building2 },
+    { id: 'plan',           label: t('settings.tab.plan'),          icon: CreditCard },
+    { id: 'seguridad',      label: t('settings.tab.security'),      icon: Shield },
+    { id: 'notificaciones', label: t('settings.tab.notifs'),        icon: Bell },
+    { id: 'integraciones',  label: t('settings.tab.integrations'),  icon: Zap },
+    { id: 'apariencia',     label: t('settings.tab.appearance'),    icon: Palette },
+  ];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-gray-500 mt-1">Gestiona la configuración de tu empresa</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('settings.title')}</h1>
+        <p className="text-gray-500 mt-1">{t('settings.subtitle')}</p>
       </div>
 
       <div className="flex gap-6">
@@ -516,8 +615,8 @@ export function Settings() {
                 className={cn(
                   'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left',
                   activeTab === tab.id
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary-50 text-primary-700 dark:bg-blue-500/15 dark:text-blue-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.05]'
                 )}
               >
                 <tab.icon className="w-4 h-4" />
@@ -697,6 +796,7 @@ export function Settings() {
             </Card>
           )}
           {activeTab === 'integraciones' && <IntegracionesTab />}
+          {activeTab === 'apariencia'    && <AppearanceTab />}
         </div>
       </div>
     </div>
