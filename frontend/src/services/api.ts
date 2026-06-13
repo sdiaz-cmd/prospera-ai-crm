@@ -4,16 +4,37 @@ import toast from 'react-hot-toast';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// ─── Claves de storage (deben coincidir con authStore.ts) ─────────────────────
+const KEY_ACCESS  = 'prosp_at';   // sessionStorage — accessToken
+const KEY_REFRESH = 'prosp_rt';   // localStorage  — refreshToken
+
+function getAccessToken()  { return sessionStorage.getItem(KEY_ACCESS)  ?? localStorage.getItem('accessToken'); }
+function getRefreshToken() { return localStorage.getItem(KEY_REFRESH)   ?? localStorage.getItem('refreshToken'); }
+
+function setTokens(at: string, rt: string) {
+  sessionStorage.setItem(KEY_ACCESS, at);
+  localStorage.setItem(KEY_REFRESH, rt);
+}
+
+function clearTokens() {
+  sessionStorage.removeItem(KEY_ACCESS);
+  localStorage.removeItem(KEY_REFRESH);
+  // Limpiar claves legacy
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+}
+
+// ─── Axios instance ────────────────────────────────────────────────────────────
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+  timeout: 30_000,
 });
 
-// ─── Request interceptor: adjuntar token ─────────────────────────
+// ─── Request interceptor: adjuntar token ──────────────────────────────────────
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,15 +43,12 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Response interceptor: manejar errores y refresh ─────────────
+// ─── Response interceptor: refresh automático de token 401 ───────────────────
 let isRefreshing = false;
 let failedQueue: { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }[] = [];
 
 const processQueue = (error: AxiosError | null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
+  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve(token)));
   failedQueue = [];
 };
 
@@ -39,19 +57,18 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // No interceptar refresh en rutas de auth (login, register, etc.)
-    const isAuthRoute = originalRequest.url?.includes('/auth/login') ||
+    const isAuthRoute =
+      originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/register') ||
       originalRequest.url?.includes('/auth/refresh');
 
+    // ── Refresh automático en 401 ──────────────────────────────────────────────
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
+          if (originalRequest.headers) originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         });
       }
@@ -59,30 +76,25 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
-
+      const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        localStorage.clear();
+        clearTokens();
         window.location.href = '/login';
         return Promise.reject(error);
       }
 
       try {
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-        const { accessToken, refreshToken: newRefreshToken } = data.data;
+        const { accessToken, refreshToken: newRT } = data.data;
 
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
+        setTokens(accessToken, newRT);
 
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        }
-
+        if (originalRequest.headers) originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         processQueue(null, accessToken);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as AxiosError, null);
-        localStorage.clear();
+        clearTokens();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
@@ -90,13 +102,13 @@ api.interceptors.response.use(
       }
     }
 
-    // Trial expirado → redirigir a pantalla de expiración
+    // ── Trial expirado ─────────────────────────────────────────────────────────
     if (error.response?.status === 402) {
       window.location.href = '/trial-expired';
       return Promise.reject(error);
     }
 
-    // Mostrar errores de servidor excepto 401 (se maneja arriba)
+    // ── Mostrar errores genéricos ──────────────────────────────────────────────
     if (error.response?.status !== 401 && error.response?.status !== 422) {
       const message = (error.response?.data as { message?: string })?.message || 'Error del servidor';
       toast.error(message);

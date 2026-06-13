@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuid } from 'uuid';
+import { randomBytes } from 'crypto';
 import { run, get, all } from '../../database/db';
 import { createSchema } from '../../database/schema';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
@@ -179,7 +180,8 @@ export class AuthService {
     // Invalida tokens previos
     run('UPDATE password_reset_tokens SET used = 1 WHERE user_id = ?', [user.id]);
 
-    const token = uuid().replace(/-/g, '') + uuid().replace(/-/g, '');
+    // Usar crypto.randomBytes para mayor entropía (64 bytes = 128 hex chars)
+    const token = randomBytes(64).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hora
     run('INSERT INTO password_reset_tokens (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)',
       [uuid(), user.id, token, expiresAt]);

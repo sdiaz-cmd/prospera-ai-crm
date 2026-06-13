@@ -10,6 +10,7 @@ import { createSchema } from './database/schema';
 import { errorHandler, notFound } from './middleware/error.middleware';
 import { requireFeature } from './middleware/plan.middleware';
 import { authenticate } from './middleware/auth.middleware';
+import { securityHeaders } from './middleware/security.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
@@ -45,57 +46,128 @@ import apolloRoutes from './modules/apollo/apollo.routes';
 import invitationsRoutes from './modules/invitations/invitations.routes';
 // Inventory
 import inventoryRoutes from './modules/inventory/inventory.routes';
-// WhatsApp QR Session
+// WhatsApp
 import whatsappSessionRoutes from './modules/whatsapp-session/whatsapp-session.routes';
 import { whatsAppSessionService } from './modules/whatsapp-session/whatsapp-session.service';
-// WhatsApp Agent Config
 import whatsappAgentRoutes from './modules/whatsapp-agent/whatsapp-agent.routes';
-// WhatsApp Inbox
 import whatsappInboxRoutes from './modules/whatsapp-inbox/whatsapp-inbox.routes';
 
-// Inicializar schema de base de datos
+// Inicializar DB y sesiones
 createSchema();
-
-// Reconectar sesiones de WhatsApp guardadas al arrancar
 whatsAppSessionService.reconnectSaved().catch(console.error);
 
 const app = express();
 
-// Confiar en el proxy de Railway/Vercel para X-Forwarded-For
+// ─── Proxy trust (Railway / Vercel) ───────────────────────────────────────────
 app.set('trust proxy', 1);
 
-app.use(helmet({ crossOriginEmbedderPolicy: false, contentSecurityPolicy: false }));
+// ─── Helmet con headers de seguridad completos ────────────────────────────────
+const isProd = process.env.NODE_ENV === 'production';
 
-// CORS: acepta localhost en dev y cualquier dominio configurado en CORS_ORIGIN
-const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(o => o.trim());
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: isProd
+    ? {
+        directives: {
+          defaultSrc:    ["'self'"],
+          scriptSrc:     ["'self'"],
+          styleSrc:      ["'self'", "'unsafe-inline'"],  // React styles
+          imgSrc:        ["'self'", 'data:', 'https:'],
+          connectSrc:    ["'self'", 'https://api.anthropic.com'],
+          fontSrc:       ["'self'", 'https://fonts.gstatic.com'],
+          objectSrc:     ["'none'"],
+          frameAncestors:["'none'"],
+          baseUri:       ["'self'"],
+          formAction:    ["'self'"],
+        },
+      }
+    : false,
+  hsts: isProd
+    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+    : false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  noSniff: true,
+  xssFilter: true,
+  hidePoweredBy: true,
+}));
+
+// ─── Headers de seguridad adicionales ────────────────────────────────────────
+app.use(securityHeaders);
+
+// ─── CORS estricto ────────────────────────────────────────────────────────────
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Sin origin (requests del mismo servidor) o wildcard → permitir
-    if (!origin || corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+    // Permitir requests sin Origin (same-origin, mobile apps, Postman en dev)
+    if (!origin) return callback(null, !isProd);
+
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // Permisivo: frontend servido desde el mismo Express
+      callback(new Error(`CORS: origen no permitido — ${origin}`));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400, // Pre-flight cache 24h
 }));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 2000, message: { success: false, message: 'Demasiadas solicitudes' } });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { success: false, message: 'Demasiados intentos de autenticación' } });
+// ─── Rate limiting ────────────────────────────────────────────────────────────
 
-app.use('/api', limiter);
+// Límite general para la API — 300 req / 15 min por IP
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas solicitudes, intenta más tarde' },
+  skip: (req) => req.path === '/health',
+});
+
+// Login / registro — 20 intentos / 15 min por IP (previene brute force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiados intentos de autenticación, espera 15 minutos' },
+});
+
+// Forgot password — 5 intentos / hora por IP (previene email flooding)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Demasiadas solicitudes de recuperación de contraseña' },
+});
+
+app.use('/api', apiLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 
+// ─── Body parsing — límite reducido para prevenir DoS ─────────────────────────
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-app.get('/health', (_, res) => res.json({ status: 'ok', app: 'PROSPERA.AI API', version: '1.0.0', timestamp: new Date().toISOString() }));
+// ─── Logging solo en desarrollo ───────────────────────────────────────────────
+if (!isProd) app.use(morgan('dev'));
 
+// ─── Health check (sin info de versión en prod) ───────────────────────────────
+app.get('/health', (_, res) => res.json({
+  status: 'ok',
+  timestamp: new Date().toISOString(),
+  ...(isProd ? {} : { app: 'PROSPERA.AI API', version: '1.0.0' }),
+}));
+
+// ─── Rutas API ────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/roles', rolesRoutes);
@@ -109,7 +181,7 @@ app.use('/api/opportunities', opportunitiesRoutes);
 app.use('/api/activities', activitiesRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/quotes', quotesRoutes);
-// ERP — Growth+
+// ERP
 app.use('/api/suppliers', authenticate, requireFeature('erp'), suppliersRoutes);
 app.use('/api/products', authenticate, requireFeature('erp'), productsRoutes);
 app.use('/api/invoices', authenticate, requireFeature('erp'), invoicesRoutes);
@@ -117,11 +189,11 @@ app.use('/api/invoices', authenticate, requireFeature('erp'), invoicesRoutes);
 app.use('/api/webhook', webhookRoutes);
 // Reports
 app.use('/api/reports', reportsRoutes);
-// Landing Pages — Growth+
+// Landing Pages
 app.use('/api/landing-pages', authenticate, requireFeature('landing'), landingRoutes);
-// Marketing — Growth+
+// Marketing
 app.use('/api/campaigns', authenticate, requireFeature('marketing'), campaignsRoutes);
-// AI — Enterprise
+// AI
 app.use('/api/ai', authenticate, requireFeature('ai'), aiRoutes);
 // Apollo
 app.use('/api/apollo', apolloRoutes);
@@ -129,20 +201,18 @@ app.use('/api/apollo', apolloRoutes);
 app.use('/api/invitations', invitationsRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
-// WhatsApp QR Session
+// WhatsApp
 app.use('/api/whatsapp', whatsappSessionRoutes);
-// WhatsApp Agent Config
 app.use('/api/whatsapp-agent', whatsappAgentRoutes);
-// WhatsApp Inbox
 app.use('/api/whatsapp', whatsappInboxRoutes);
 
-// ─── Servir frontend compilado (modo compartido/público) ─────────────────────
-// Cuando el frontend está compilado (npm run build en /frontend),
-// Express lo sirve directamente. Así solo necesitas exponer el puerto 4000.
+// ─── Frontend compilado (modo compartido) ──────────────────────────────────────
 const frontendDist = path.join(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
-  // Catch-all para React Router: cualquier ruta no-API devuelve index.html
+  app.use(express.static(frontendDist, {
+    maxAge: isProd ? '1y' : 0,
+    etag: true,
+  }));
   app.get(/^(?!\/api|\/health).*/, (_req, res) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });

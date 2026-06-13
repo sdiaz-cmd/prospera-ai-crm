@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthState, LoginResponse } from '../types';
 
 interface AuthStore extends AuthState {
@@ -19,14 +19,44 @@ const initialState: AuthState = {
   isOwner: false,
 };
 
+// ─── Token storage strategy ───────────────────────────────────────────────────
+// - accessToken → sessionStorage: corta vida (15 min), no persiste entre pestañas.
+//   Si hay XSS, el token expira rápido y no se comparte entre sesiones del browser.
+// - refreshToken → localStorage: necesario para mantener sesión entre recargas.
+//   Zustand persist lo maneja; el token tiene 7 días de vida pero el backend
+//   lo rota en cada uso (rotation via refresh endpoint).
+
+const TOKEN_KEY_ACCESS  = 'prosp_at';
+const TOKEN_KEY_REFRESH = 'prosp_rt';
+
+function storeTokens(accessToken: string, refreshToken: string) {
+  try {
+    sessionStorage.setItem(TOKEN_KEY_ACCESS, accessToken);
+    localStorage.setItem(TOKEN_KEY_REFRESH, refreshToken);
+  } catch {
+    // Storage puede estar bloqueado en modo privado/incógnito; continuar
+  }
+}
+
+function clearTokens() {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY_ACCESS);
+    localStorage.removeItem(TOKEN_KEY_REFRESH);
+    // Limpiar clave legacy (si existe de versión anterior)
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  } catch {
+    // Ignorar
+  }
+}
+
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       ...initialState,
 
       setAuth: (data) => {
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
+        storeTokens(data.accessToken, data.refreshToken);
         set({
           user: data.user,
           company: data.company,
@@ -40,8 +70,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       clearAuth: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        clearTokens();
         set(initialState);
       },
 
@@ -53,16 +82,35 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'prospera-auth',
+      // Persistir solo datos de sesión no-sensibles en localStorage.
+      // Los tokens se guardan separadamente arriba (access en sessionStorage).
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        user: state.user,
-        company: state.company,
-        role: state.role,
-        permissions: state.permissions,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        user:            state.user,
+        company:         state.company,
+        role:            state.role,
+        permissions:     state.permissions,
+        // Solo el refreshToken se persiste en el store (localStorage).
+        // El accessToken se recupera de sessionStorage al recargar.
+        refreshToken:    state.refreshToken,
         isAuthenticated: state.isAuthenticated,
-        isOwner: state.isOwner,
+        isOwner:         state.isOwner,
+        // accessToken no se persiste aquí — viene de sessionStorage
+        accessToken:     null,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Al recargar la página, recuperar el accessToken de sessionStorage
+        if (state) {
+          const storedAt = sessionStorage.getItem(TOKEN_KEY_ACCESS);
+          if (storedAt) {
+            state.accessToken = storedAt;
+          } else {
+            // accessToken expirado/ausente en sessionStorage → desautenticar
+            // El API service hará refresh automático con el refreshToken
+            state.accessToken = null;
+          }
+        }
+      },
     }
   )
 );
