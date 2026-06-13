@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Google Fonts ──────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -16,73 +19,91 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 14px;
     line-height: 1.5;
-    color: #111827;
-    background-color: #f4f6f9;
+    color: #1e2330;
+    background-color: #f0f2f7;
   }
 
-  /* Refined scrollbar */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #e5e7eb;
-    border-radius: 10px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #d1d5db;
-  }
+  /* Default scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #e2e5eb; border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: #cbd0d9; }
+
+  /* Dark sidebar scrollbar */
+  .sidebar-scroll::-webkit-scrollbar { width: 3px; }
+  .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 8px; }
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+
+  /* Gradient text utility */
+  .text-gradient-blue {
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
 @layer components {
-  /* Card with smooth hover lift */
-  .card-interactive {
-    @apply bg-white rounded-xl border border-gray-200/80 shadow-card transition-all duration-200 ease-out;
+  /* ── Cards ──────────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl border border-black/[0.06] transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   }
-  .card-interactive:hover {
-    @apply shadow-card-hover -translate-y-[1px];
+  .card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .card-flat {
+    @apply bg-white rounded-2xl border border-black/[0.06];
   }
 
-  /* Smooth focus ring for inputs */
-  .input-focus {
+  /* ── Inputs ─────────────────────────────────────────────────────────────── */
+  .input-base {
+    @apply w-full rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm px-3.5 py-2.5;
     @apply transition-all duration-150 outline-none;
   }
-  .input-focus:focus {
-    @apply ring-2 ring-blue-500/30 border-blue-400;
+  .input-base:focus {
+    @apply border-blue-400;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.14);
   }
 
-  /* Sidebar nav active glow */
-  .nav-active-glow {
-    position: relative;
+  /* ── Buttons ─────────────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-150;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 2px 8px rgba(37,99,235,0.30), 0 1px 2px rgba(37,99,235,0.20);
   }
-  .nav-active-glow::before {
-    content: '';
-    position: absolute;
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 60%;
-    background: #60a5fa;
-    border-radius: 0 4px 4px 0;
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.40), 0 1px 4px rgba(37,99,235,0.20);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── Badges ──────────────────────────────────────────────────────────────── */
+  .badge-blue    { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-blue-200/60; }
+  .badge-green   { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60; }
+  .badge-red     { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-red-200/60; }
+  .badge-yellow  { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200/60; }
+  .badge-gray    { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 ring-1 ring-gray-200/60; }
+
+  /* ── Page headers ────────────────────────────────────────────────────────── */
+  .page-title {
+    @apply text-xl font-bold text-gray-900 tracking-tight;
+  }
+  .page-subtitle {
+    @apply text-sm text-gray-500 mt-0.5;
   }
 
-  /* Badge pill */
-  .badge-pill {
-    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
-  }
-
-  /* KPI card value */
+  /* ── KPI card ────────────────────────────────────────────────────────────── */
   .kpi-value {
-    @apply text-2xl font-bold text-gray-900 tracking-tight;
+    @apply text-[28px] font-extrabold text-gray-900 tracking-tight leading-none;
+  }
+  .kpi-label {
+    @apply text-[12px] font-medium text-gray-500 uppercase tracking-wide;
   }
 }

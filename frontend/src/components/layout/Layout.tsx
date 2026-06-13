@@ -8,7 +8,7 @@ export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#f0f2f7' }}>
       <Sidebar collapsed={sidebarCollapsed} />
       <Header
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -16,11 +16,11 @@ export function Layout() {
       />
       <main
         className={cn(
-          'transition-all duration-300 pt-16 min-h-screen',
-          sidebarCollapsed ? 'ml-16' : 'ml-64'
+          'transition-all duration-300 pt-14 min-h-screen',
+          sidebarCollapsed ? 'ml-[60px]' : 'ml-[240px]'
         )}
       >
-        <div className="p-6 max-w-[1400px] mx-auto">
+        <div className="p-6 max-w-[1440px] mx-auto">
           <Outlet />
         </div>
       </main>

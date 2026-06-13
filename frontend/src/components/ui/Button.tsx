@@ -11,11 +11,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm',
+  primary: '[background:linear-gradient(135deg,#3b82f6_0%,#2563eb_100%)] text-white hover:[background:linear-gradient(135deg,#60a5fa_0%,#3b82f6_100%)] shadow-glow-blue-md focus:ring-blue-500 hover:-translate-y-px active:translate-y-0',
   secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-400',
-  outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-400 bg-white',
+  outline: 'border border-gray-200 text-gray-700 hover:bg-gray-50 focus:ring-gray-400 bg-white shadow-xs',
   ghost: 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-400',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm',
+  danger: 'bg-red-600 text-white hover:bg-red-500 focus:ring-red-500 shadow-sm hover:-translate-y-px active:translate-y-0',
 };
 
 const sizes = {

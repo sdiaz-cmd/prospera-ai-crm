@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Target, UserCircle,
-  ShoppingBag, BarChart3, Megaphone, Settings, ChevronRight,
-  Boxes, Zap, Globe, Package, Bot, Lock, MessageCircle
+  Megaphone, BarChart3, Settings, Boxes,
+  Zap, Globe, Package, Bot, Lock, MessageCircle,
+  CheckSquare, FileText, ReceiptText, Truck, Users2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -11,6 +11,8 @@ import { useAuthStore } from '@/store/authStore';
 import { Avatar } from '../ui/Avatar';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
+
+// ─── Plan config ──────────────────────────────────────────────────────────────
 
 type PlanName = 'trial' | 'starter' | 'growth' | 'enterprise';
 
@@ -21,101 +23,175 @@ const PLAN_FEATURES: Record<PlanName, Record<string, boolean>> = {
   enterprise: { crm: true, erp: true,  marketing: true,  landing: true,  ai: true  },
 };
 
-const PLAN_COLORS: Record<PlanName, string> = {
-  trial: 'text-gray-400',
-  starter: 'text-blue-400',
-  growth: 'text-emerald-400',
-  enterprise: 'text-violet-400',
+const PLAN_BADGE: Record<PlanName, { label: string; cls: string }> = {
+  trial:      { label: 'Trial',      cls: 'bg-gray-500/20 text-gray-400 ring-1 ring-gray-500/30' },
+  starter:    { label: 'Starter',    cls: 'bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/30' },
+  growth:     { label: 'Growth',     cls: 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30' },
+  enterprise: { label: 'Enterprise', cls: 'bg-violet-500/20 text-violet-300 ring-1 ring-violet-500/30' },
 };
 
 function getPlanFeatures(plan: string) {
   return PLAN_FEATURES[plan as PlanName] ?? PLAN_FEATURES.trial;
 }
-function getPlanColor(plan: string) {
-  return PLAN_COLORS[plan as PlanName] ?? PLAN_COLORS.trial;
+function getPlanBadge(plan: string) {
+  return PLAN_BADGE[plan as PlanName] ?? PLAN_BADGE.trial;
 }
 
-// ─── Minimalist PROSPERA Logo Mark ────────────────────────────────────────────
+// ─── Logo mark ────────────────────────────────────────────────────────────────
 
-function ProspLogo({ size = 32 }: { size?: number }) {
+function ProspLogo({ size = 34 }: { size?: number }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="flex-shrink-0"
-    >
+    <svg width={size} height={size} viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
       <defs>
-        <linearGradient id="prosp-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#60A5FA" />
-          <stop offset="100%" stopColor="#2563EB" />
+        <linearGradient id="bg-g" x1="0" y1="0" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#1e3a5f" />
+          <stop offset="100%" stopColor="#0a1628" />
         </linearGradient>
+        <linearGradient id="line-g" x1="6" y1="24" x2="28" y2="8" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#06b6d4" />
+        </linearGradient>
+        <linearGradient id="fill-g" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+        </linearGradient>
+        <clipPath id="clip-logo">
+          <rect width="34" height="34" rx="9" />
+        </clipPath>
       </defs>
-      {/* Rounded square background */}
-      <rect width="32" height="32" rx="8" fill="url(#prosp-grad)" />
-      {/* P — vertical bar */}
-      <rect x="8.5" y="7" width="3.5" height="18" rx="1.75" fill="white" />
-      {/* P — bowl (semicircle right side) */}
+
+      {/* Background */}
+      <rect width="34" height="34" rx="9" fill="url(#bg-g)" />
+
+      {/* Inner area fill */}
+      <g clipPath="url(#clip-logo)">
+        <path
+          d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8 L28 32 L6 32 Z"
+          fill="url(#fill-g)"
+        />
+      </g>
+
+      {/* Rising sparkline */}
       <path
-        d="M12 7h3.5a5.5 5.5 0 0 1 0 11H12V7z"
-        fill="white"
-        fillOpacity="0.95"
+        d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8"
+        stroke="url(#line-g)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
       />
-      {/* Growth accent — small rising dot */}
-      <circle cx="22.5" cy="8.5" r="2" fill="white" fillOpacity="0.45" />
-      <circle cx="22.5" cy="8.5" r="1.1" fill="white" fillOpacity="0.8" />
+
+      {/* Endpoint glow */}
+      <circle cx="28" cy="8" r="3.5" fill="#3b82f6" fillOpacity="0.25" />
+      <circle cx="28" cy="8" r="2" fill="#60a5fa" />
     </svg>
   );
 }
 
-// ─── Collapsed logo mark (24px, no label) ─────────────────────────────────────
+// ─── Section label ─────────────────────────────────────────────────────────────
 
-function ProspLogoSmall() {
+function SectionLabel({ label }: { label: string }) {
   return (
-    <svg
-      width="28"
-      height="28"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="flex-shrink-0"
-    >
-      <defs>
-        <linearGradient id="prosp-grad-sm" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#60A5FA" />
-          <stop offset="100%" stopColor="#2563EB" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="8" fill="url(#prosp-grad-sm)" />
-      <rect x="8.5" y="7" width="3.5" height="18" rx="1.75" fill="white" />
-      <path d="M12 7h3.5a5.5 5.5 0 0 1 0 11H12V7z" fill="white" fillOpacity="0.95" />
-      <circle cx="22.5" cy="8.5" r="2" fill="white" fillOpacity="0.45" />
-      <circle cx="22.5" cy="8.5" r="1.1" fill="white" fillOpacity="0.8" />
-    </svg>
+    <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-600 uppercase select-none">
+      {label}
+    </p>
   );
 }
 
-interface NavItem {
-  label: string;
+// ─── Nav item ─────────────────────────────────────────────────────────────────
+
+interface NavItemProps {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
-  badgeCount?: number;
-  soon?: boolean;
-  feature?: string;
-  children?: NavItem[];
-}
-
-interface SidebarProps {
+  label: string;
   collapsed: boolean;
+  badge?: number;
+  locked?: boolean;
+  onLockedClick?: () => void;
 }
 
-export function Sidebar({ collapsed }: SidebarProps) {
+function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClick }: NavItemProps) {
+  if (locked) {
+    return (
+      <button
+        onClick={onLockedClick}
+        title={collapsed ? label : undefined}
+        className={cn(
+          'w-full flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-150',
+          'text-gray-700 opacity-40 hover:opacity-60 hover:bg-white/[0.04]',
+          collapsed && 'justify-center'
+        )}
+      >
+        <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+        {!collapsed && (
+          <>
+            <span className="flex-1 text-left">{label}</span>
+            <Lock className="w-3 h-3 text-gray-700" />
+          </>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <NavLink
+      to={to}
+      title={collapsed ? label : undefined}
+      className={({ isActive }) =>
+        cn(
+          'relative flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-150 group',
+          isActive
+            ? 'text-blue-200 font-medium'
+            : 'text-gray-500 hover:text-gray-100 hover:bg-white/[0.05]',
+          collapsed && 'justify-center'
+        )
+      }
+      style={({ isActive }) =>
+        isActive
+          ? {
+              background: 'linear-gradient(90deg, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.06) 100%)',
+              boxShadow: 'inset 2px 0 0 #60a5fa',
+            }
+          : {}
+      }
+    >
+      <span className="relative flex-shrink-0">
+        <Icon className="w-[18px] h-[18px]" />
+        {collapsed && badge ? (
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        ) : null}
+      </span>
+      {!collapsed && (
+        <>
+          <span className="flex-1 leading-none">{label}</span>
+          {badge ? (
+            <span className="min-w-[20px] h-5 bg-red-500/90 text-white text-[11px] font-semibold rounded-full flex items-center justify-center px-1.5 leading-none">
+              {badge > 99 ? '99+' : badge}
+            </span>
+          ) : null}
+        </>
+      )}
+
+      {/* Collapsed tooltip */}
+      {collapsed && (
+        <div className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-lg bg-gray-800 border border-white/[0.1] px-2.5 py-1.5 text-xs text-gray-100 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {label}
+          {badge ? <span className="ml-1.5 text-red-400 font-semibold">({badge})</span> : null}
+        </div>
+      )}
+    </NavLink>
+  );
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+export function Sidebar({ collapsed }: { collapsed: boolean }) {
   const { user, company } = useAuthStore();
-  const location = useLocation();
+  const navigate = useNavigate();
   const features = getPlanFeatures(company?.plan || 'trial');
+  const planBadge = getPlanBadge(company?.plan || 'trial');
 
   const { data: waUnread } = useQuery<{ count: number }>({
     queryKey: ['wa-unread-sidebar'],
@@ -125,291 +201,146 @@ export function Sidebar({ collapsed }: SidebarProps) {
   });
   const unreadCount = waUnread?.count ?? 0;
 
-  const navItems: NavItem[] = [
-    { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-    {
-      label: 'CRM',
-      to: '/crm',
-      icon: Target,
-      children: [
-        { label: 'Leads', to: '/crm/leads', icon: UserCircle },
-        { label: 'Contactos', to: '/crm/contacts', icon: Users },
-        { label: 'Empresas', to: '/crm/accounts', icon: Building2 },
-        { label: 'Oportunidades', to: '/crm/opportunities', icon: Target },
-        { label: 'Actividades', to: '/crm/activities', icon: Zap },
-        { label: 'Tareas', to: '/crm/tasks', icon: Boxes },
-        { label: 'Cotizaciones', to: '/crm/quotes', icon: Package },
-      ],
-    },
-    {
-      label: 'ERP',
-      to: '/erp',
-      icon: ShoppingBag,
-      feature: 'erp',
-      children: [
-        { label: 'Productos', to: '/erp/products', icon: Package },
-        { label: 'Proveedores', to: '/erp/suppliers', icon: Building2 },
-        { label: 'Facturas', to: '/erp/invoices', icon: BarChart3 },
-        { label: 'Inventario', to: '/erp/inventory', icon: Boxes },
-      ],
-    },
-    { label: 'Usuarios', to: '/users', icon: Users },
-    { label: 'Marketing', to: '/marketing', icon: Megaphone, feature: 'marketing' },
-    { label: 'IA & Automatización', to: '/ai', icon: Bot, feature: 'ai' },
-    { label: 'Agente WhatsApp', to: '/whatsapp-agent', icon: MessageCircle, badgeCount: unreadCount > 0 ? unreadCount : undefined },
-    { label: 'Landing Pages', to: '/landing', icon: Globe, feature: 'landing' },
-    { label: 'Reportes', to: '/reports', icon: BarChart3 },
-  ];
+  const handleLocked = () => {
+    toast.error('Actualiza tu plan para acceder a esta función', { icon: '🔒' });
+    navigate('/settings?tab=plan');
+  };
+
+  const navItem = (to: string, icon: React.ComponentType<{ className?: string }>, label: string, opts?: { badge?: number; feature?: string }) => (
+    <NavItem
+      key={to}
+      to={to}
+      icon={icon}
+      label={label}
+      collapsed={collapsed}
+      badge={opts?.badge}
+      locked={opts?.feature ? !features[opts.feature] : false}
+      onLockedClick={handleLocked}
+    />
+  );
 
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-screen flex flex-col transition-all duration-300 z-40',
-        'bg-[#0d1117] border-r border-white/[0.06]',
-        collapsed ? 'w-16' : 'w-64'
+        'fixed left-0 top-0 h-screen flex flex-col z-40 transition-all duration-300',
+        collapsed ? 'w-[60px]' : 'w-[240px]'
       )}
+      style={{
+        background: 'linear-gradient(175deg, #0c1220 0%, #080d18 60%, #060a12 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.055)',
+      }}
     >
-      {/* Logo */}
+      {/* Top glow accent */}
+      <div
+        className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 120% 60% at 50% -10%, rgba(59,130,246,0.10) 0%, transparent 70%)',
+        }}
+      />
+
+      {/* ── Logo ── */}
       <div
         className={cn(
-          'flex items-center gap-3 px-4 py-4 border-b border-white/[0.06]',
+          'relative flex items-center gap-3 px-4 py-4',
           collapsed && 'justify-center px-0'
         )}
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.055)' }}
       >
-        {collapsed ? (
-          <ProspLogoSmall />
-        ) : (
-          <>
-            <ProspLogo size={32} />
-            <div className="leading-tight">
-              <span className="text-white font-bold text-[15px] tracking-wide">PROSPERA</span>
-              <span className="text-blue-400/70 font-semibold text-[15px] tracking-wide">.AI</span>
-            </div>
-          </>
+        <ProspLogo size={collapsed ? 30 : 34} />
+        {!collapsed && (
+          <div className="flex flex-col leading-none">
+            <span
+              className="font-extrabold text-[15px] tracking-wide"
+              style={{
+                background: 'linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              PROSPERA
+              <span
+                style={{
+                  background: 'linear-gradient(90deg, #60a5fa, #22d3ee)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                .AI
+              </span>
+            </span>
+            {company && (
+              <span className={cn('mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full self-start', planBadge.cls)}>
+                {planBadge.label}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Empresa activa */}
-      {!collapsed && company && (
-        <div className="px-4 py-3 border-b border-white/[0.06]">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-600 mb-1">Empresa activa</p>
-          <p className="text-sm font-medium text-gray-200 truncate">{company.name}</p>
-          <span className={cn('text-xs font-medium capitalize', getPlanColor(company.plan))}>
-            {company.plan}
-          </span>
-        </div>
-      )}
+      {/* ── Navigation ── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-0.5 sidebar-scroll">
 
-      {/* Navegación */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-        {navItems.map((item) => (
-          <NavGroup
-            key={item.to}
-            item={item}
-            collapsed={collapsed}
-            currentPath={location.pathname}
-            features={features}
-          />
-        ))}
+        {/* Dashboard */}
+        {navItem('/dashboard', LayoutDashboard, 'Dashboard')}
+
+        {/* CRM */}
+        {!collapsed && <SectionLabel label="CRM" />}
+        {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+        {navItem('/crm/leads', UserCircle, 'Leads')}
+        {navItem('/crm/contacts', Users, 'Contactos')}
+        {navItem('/crm/accounts', Building2, 'Empresas')}
+        {navItem('/crm/opportunities', Target, 'Oportunidades')}
+        {navItem('/crm/activities', Zap, 'Actividades')}
+        {navItem('/crm/tasks', CheckSquare, 'Tareas')}
+        {navItem('/crm/quotes', FileText, 'Cotizaciones')}
+
+        {/* ERP */}
+        {!collapsed && <SectionLabel label="Finanzas & ERP" />}
+        {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+        {navItem('/erp/products', Package, 'Productos', { feature: 'erp' })}
+        {navItem('/erp/suppliers', Truck, 'Proveedores', { feature: 'erp' })}
+        {navItem('/erp/invoices', ReceiptText, 'Facturas', { feature: 'erp' })}
+        {navItem('/erp/inventory', Boxes, 'Inventario', { feature: 'erp' })}
+
+        {/* Marketing */}
+        {!collapsed && <SectionLabel label="Marketing" />}
+        {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+        {navItem('/marketing', Megaphone, 'Campañas', { feature: 'marketing' })}
+        {navItem('/landing', Globe, 'Landing Pages', { feature: 'landing' })}
+
+        {/* Herramientas */}
+        {!collapsed && <SectionLabel label="Herramientas" />}
+        {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+        {navItem('/whatsapp-agent', MessageCircle, 'WhatsApp Agent', { badge: unreadCount > 0 ? unreadCount : undefined })}
+        {navItem('/ai', Bot, 'IA & Automatización', { feature: 'ai' })}
+        {navItem('/reports', BarChart3, 'Reportes')}
+        {navItem('/users', Users2, 'Usuarios')}
       </nav>
 
-      {/* Configuración */}
-      <div className="border-t border-white/[0.06] p-2 space-y-0.5">
-        <NavLink
+      {/* ── Bottom: Configuración + User ── */}
+      <div className="relative px-2 py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}>
+        <NavItem
           to="/settings"
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
-              'border-l-2',
-              isActive
-                ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80'
-                : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
-              collapsed && 'justify-center'
-            )
-          }
-        >
-          <Settings className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Configuración</span>}
-        </NavLink>
+          icon={Settings}
+          label="Configuración"
+          collapsed={collapsed}
+        />
 
-        {/* Usuario actual */}
         {!collapsed && user && (
           <NavLink
             to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-all duration-200"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-all duration-150 group mt-1"
           >
             <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-200 truncate">
+              <p className="text-[13px] font-medium text-gray-300 truncate leading-none mb-0.5">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-gray-600 truncate">{user.email}</p>
+              <p className="text-[11px] text-gray-600 truncate">{user.email}</p>
             </div>
           </NavLink>
         )}
       </div>
     </aside>
-  );
-}
-
-function NavGroup({
-  item,
-  collapsed,
-  currentPath,
-  features,
-}: {
-  item: NavItem;
-  collapsed: boolean;
-  currentPath: string;
-  features: Record<string, boolean>;
-}) {
-  const navigate = useNavigate();
-  const isLocked = item.feature && !features[item.feature];
-
-  const handleLockedClick = () => {
-    toast.error('Actualiza tu plan para acceder a esta función', { icon: '🔒' });
-    navigate('/settings?tab=plan');
-  };
-
-  if (!item.children) {
-    if (isLocked) {
-      return (
-        <button
-          onClick={handleLockedClick}
-          className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 opacity-40 cursor-pointer border-l-2 border-transparent',
-            'text-gray-500 hover:bg-white/[0.04] hover:text-gray-400',
-            collapsed && 'justify-center'
-          )}
-        >
-          <item.icon className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-left">{item.label}</span>
-              <Lock className="w-3.5 h-3.5 text-gray-700" />
-            </>
-          )}
-        </button>
-      );
-    }
-
-    return (
-      <NavLink
-        to={item.to}
-        className={({ isActive }) =>
-          cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 relative group border-l-2',
-            isActive
-              ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80 font-medium'
-              : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
-            item.soon && 'opacity-50 cursor-not-allowed pointer-events-none',
-            collapsed && 'justify-center'
-          )
-        }
-        onClick={item.soon ? (e) => e.preventDefault() : undefined}
-      >
-        <span className="relative flex-shrink-0">
-          <item.icon className="w-5 h-5" />
-          {collapsed && item.badgeCount ? (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
-              {item.badgeCount > 9 ? '9+' : item.badgeCount}
-            </span>
-          ) : null}
-        </span>
-        {!collapsed && (
-          <>
-            <span className="flex-1">{item.label}</span>
-            {item.badgeCount ? (
-              <span className="min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
-                {item.badgeCount > 99 ? '99+' : item.badgeCount}
-              </span>
-            ) : null}
-            {item.soon && (
-              <span className="text-xs bg-white/[0.07] text-gray-500 px-1.5 py-0.5 rounded">Pronto</span>
-            )}
-          </>
-        )}
-        {/* Collapsed tooltip */}
-        {collapsed && (
-          <div className="absolute left-full ml-3 bg-gray-800 text-white text-xs rounded-lg px-2.5 py-1.5 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 shadow-lg border border-white/10">
-            {item.label}
-          </div>
-        )}
-      </NavLink>
-    );
-  }
-
-  const isGroupActive = item.children.some((child) => currentPath.startsWith(child.to));
-  const [open, setOpen] = useState(isGroupActive);
-
-  if (isLocked) {
-    return (
-      <button
-        onClick={handleLockedClick}
-        className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 opacity-40 border-l-2 border-transparent',
-          'text-gray-500 hover:bg-white/[0.04] hover:text-gray-400',
-          collapsed && 'justify-center'
-        )}
-      >
-        <item.icon className="w-5 h-5 flex-shrink-0" />
-        {!collapsed && (
-          <>
-            <span className="flex-1 font-medium text-left">{item.label}</span>
-            <Lock className="w-3.5 h-3.5 text-gray-700" />
-          </>
-        )}
-      </button>
-    );
-  }
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 border-l-2 border-transparent',
-          isGroupActive
-            ? 'text-gray-200 font-medium'
-            : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-300',
-          collapsed && 'justify-center'
-        )}
-      >
-        <item.icon className="w-5 h-5 flex-shrink-0" />
-        {!collapsed && (
-          <>
-            <span className="flex-1 text-left">{item.label}</span>
-            <ChevronRight className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-90')} />
-          </>
-        )}
-      </button>
-
-      {!collapsed && open && (
-        <div className="ml-4 pl-3 border-l border-white/[0.08] mt-0.5 space-y-0.5">
-          {item.children.map((child) => (
-            <NavLink
-              key={child.to}
-              to={child.to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 border-l-2',
-                  isActive
-                    ? 'bg-blue-500/[0.12] text-blue-300 border-blue-400/80 font-medium'
-                    : 'text-gray-500 hover:bg-white/[0.05] hover:text-gray-200 border-transparent',
-                  child.soon && 'opacity-50 cursor-not-allowed pointer-events-none'
-                )
-              }
-              onClick={child.soon ? (e) => e.preventDefault() : undefined}
-            >
-              <child.icon className="w-4 h-4 flex-shrink-0" />
-              <span>{child.label}</span>
-              {child.soon && (
-                <span className="ml-auto text-xs bg-white/[0.07] text-gray-500 px-1 py-0.5 rounded">Pronto</span>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
