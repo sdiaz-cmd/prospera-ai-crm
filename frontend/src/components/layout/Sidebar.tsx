@@ -1,9 +1,11 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Target, UserCircle,
   Megaphone, BarChart3, Settings, Boxes,
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
+  ChevronDown,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -37,7 +39,7 @@ function getPlanBadge(plan: string) {
   return PLAN_BADGE[plan as PlanName] ?? PLAN_BADGE.trial;
 }
 
-// ─── Logo mark ────────────────────────────────────────────────────────────────
+// ─── Logo ─────────────────────────────────────────────────────────────────────
 
 function ProspLogo({ size = 34 }: { size?: number }) {
   return (
@@ -59,46 +61,18 @@ function ProspLogo({ size = 34 }: { size?: number }) {
           <rect width="34" height="34" rx="9" />
         </clipPath>
       </defs>
-
-      {/* Background */}
       <rect width="34" height="34" rx="9" fill="url(#bg-g)" />
-
-      {/* Inner area fill */}
       <g clipPath="url(#clip-logo)">
-        <path
-          d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8 L28 32 L6 32 Z"
-          fill="url(#fill-g)"
-        />
+        <path d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8 L28 32 L6 32 Z" fill="url(#fill-g)" />
       </g>
-
-      {/* Rising sparkline */}
-      <path
-        d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8"
-        stroke="url(#line-g)"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-
-      {/* Endpoint glow */}
+      <path d="M6 24 C10 20, 14 22, 18 17 C21 13, 24 12, 28 8" stroke="url(#line-g)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <circle cx="28" cy="8" r="3.5" fill="#3b82f6" fillOpacity="0.25" />
       <circle cx="28" cy="8" r="2" fill="#60a5fa" />
     </svg>
   );
 }
 
-// ─── Section label ─────────────────────────────────────────────────────────────
-
-function SectionLabel({ label }: { label: string }) {
-  return (
-    <p className="px-4 pt-5 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-600 uppercase select-none">
-      {label}
-    </p>
-  );
-}
-
-// ─── Nav item ─────────────────────────────────────────────────────────────────
+// ─── Nav leaf item ─────────────────────────────────────────────────────────────
 
 interface NavItemProps {
   to: string;
@@ -108,9 +82,10 @@ interface NavItemProps {
   badge?: number;
   locked?: boolean;
   onLockedClick?: () => void;
+  indent?: boolean;
 }
 
-function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClick }: NavItemProps) {
+function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClick, indent }: NavItemProps) {
   if (locked) {
     return (
       <button
@@ -119,10 +94,11 @@ function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClic
         className={cn(
           'w-full flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-150',
           'text-gray-700 opacity-40 hover:opacity-60 hover:bg-white/[0.04]',
+          indent && !collapsed && 'pl-4',
           collapsed && 'justify-center'
         )}
       >
-        <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+        <Icon className="w-[17px] h-[17px] flex-shrink-0" />
         {!collapsed && (
           <>
             <span className="flex-1 text-left">{label}</span>
@@ -143,6 +119,7 @@ function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClic
           isActive
             ? 'text-blue-200 font-medium'
             : 'text-gray-500 hover:text-gray-100 hover:bg-white/[0.05]',
+          indent && !collapsed && 'pl-4',
           collapsed && 'justify-center'
         )
       }
@@ -156,7 +133,7 @@ function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClic
       }
     >
       <span className="relative flex-shrink-0">
-        <Icon className="w-[18px] h-[18px]" />
+        <Icon className="w-[17px] h-[17px]" />
         {collapsed && badge ? (
           <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
             {badge > 9 ? '9+' : badge}
@@ -173,7 +150,6 @@ function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClic
           ) : null}
         </>
       )}
-
       {/* Collapsed tooltip */}
       {collapsed && (
         <div className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-lg bg-gray-800 border border-white/[0.1] px-2.5 py-1.5 text-xs text-gray-100 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150">
@@ -182,6 +158,96 @@ function NavItem({ to, icon: Icon, label, collapsed, badge, locked, onLockedClic
         </div>
       )}
     </NavLink>
+  );
+}
+
+// ─── Collapsible section ───────────────────────────────────────────────────────
+
+interface SectionItem {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  badge?: number;
+  feature?: string;
+}
+
+interface CollapsibleSectionProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: SectionItem[];
+  collapsed: boolean;      // sidebar collapsed
+  features: Record<string, boolean>;
+  onLockedClick: () => void;
+  defaultOpen?: boolean;
+}
+
+function CollapsibleSection({
+  label, icon: SectionIcon, items, collapsed, features, onLockedClick, defaultOpen = false,
+}: CollapsibleSectionProps) {
+  const location = useLocation();
+  const isAnyActive = items.some(item => location.pathname.startsWith(item.to));
+  const [open, setOpen] = useState(defaultOpen || isAnyActive);
+
+  // When sidebar is collapsed, show icon-only with tooltip; no expand/collapse
+  if (collapsed) {
+    return (
+      <div className="space-y-0.5">
+        {items.map(item => (
+          <NavItem
+            key={item.to}
+            to={item.to}
+            icon={item.icon}
+            label={item.label}
+            collapsed={true}
+            badge={item.badge}
+            locked={item.feature ? !features[item.feature] : false}
+            onLockedClick={onLockedClick}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Section header — clickable to expand/collapse */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          'w-full flex items-center gap-3 px-3 py-[7px] rounded-lg text-[13px] transition-all duration-150',
+          isAnyActive
+            ? 'text-gray-200 font-medium'
+            : 'text-gray-500 hover:text-gray-200 hover:bg-white/[0.05]'
+        )}
+      >
+        <SectionIcon className="w-[17px] h-[17px] flex-shrink-0" />
+        <span className="flex-1 text-left">{label}</span>
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 transition-transform duration-200 text-gray-600',
+            open && 'rotate-180'
+          )}
+        />
+      </button>
+
+      {/* Items — slide in/out */}
+      {open && (
+        <div className="mt-0.5 ml-2 pl-3 border-l border-white/[0.07] space-y-0.5">
+          {items.map(item => (
+            <NavItem
+              key={item.to}
+              to={item.to}
+              icon={item.icon}
+              label={item.label}
+              collapsed={false}
+              badge={item.badge}
+              locked={item.feature ? !features[item.feature] : false}
+              onLockedClick={onLockedClick}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -206,19 +272,6 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
     navigate('/settings?tab=plan');
   };
 
-  const navItem = (to: string, icon: React.ComponentType<{ className?: string }>, label: string, opts?: { badge?: number; feature?: string }) => (
-    <NavItem
-      key={to}
-      to={to}
-      icon={icon}
-      label={label}
-      collapsed={collapsed}
-      badge={opts?.badge}
-      locked={opts?.feature ? !features[opts.feature] : false}
-      onLockedClick={handleLocked}
-    />
-  );
-
   return (
     <aside
       className={cn(
@@ -230,20 +283,15 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         borderRight: '1px solid rgba(255,255,255,0.055)',
       }}
     >
-      {/* Top glow accent */}
+      {/* Top glow */}
       <div
         className="absolute top-0 left-0 right-0 h-48 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse 120% 60% at 50% -10%, rgba(59,130,246,0.10) 0%, transparent 70%)',
-        }}
+        style={{ background: 'radial-gradient(ellipse 120% 60% at 50% -10%, rgba(59,130,246,0.10) 0%, transparent 70%)' }}
       />
 
       {/* ── Logo ── */}
       <div
-        className={cn(
-          'relative flex items-center gap-3 px-4 py-4',
-          collapsed && 'justify-center px-0'
-        )}
+        className={cn('relative flex items-center gap-3 px-4 py-4', collapsed && 'justify-center px-0')}
         style={{ borderBottom: '1px solid rgba(255,255,255,0.055)' }}
       >
         <ProspLogo size={collapsed ? 30 : 34} />
@@ -258,13 +306,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
               }}
             >
               PROSPERA
-              <span
-                style={{
-                  background: 'linear-gradient(90deg, #60a5fa, #22d3ee)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
+              <span style={{ background: 'linear-gradient(90deg, #60a5fa, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 .AI
               </span>
             </span>
@@ -278,58 +320,102 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
       </div>
 
       {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 space-y-0.5 sidebar-scroll">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-0.5 sidebar-scroll">
 
-        {/* Dashboard */}
-        {navItem('/dashboard', LayoutDashboard, 'Dashboard')}
+        {/* Dashboard — siempre visible */}
+        <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" collapsed={collapsed} />
 
         {/* CRM */}
-        {!collapsed && <SectionLabel label="CRM" />}
+        {!collapsed && <div className="pt-3 pb-1 px-1">
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">CRM</span>
+        </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
-        {navItem('/crm/leads', UserCircle, 'Leads')}
-        {navItem('/crm/contacts', Users, 'Contactos')}
-        {navItem('/crm/accounts', Building2, 'Empresas')}
-        {navItem('/crm/opportunities', Target, 'Oportunidades')}
-        {navItem('/crm/activities', Zap, 'Actividades')}
-        {navItem('/crm/tasks', CheckSquare, 'Tareas')}
-        {navItem('/crm/quotes', FileText, 'Cotizaciones')}
+
+        <CollapsibleSection
+          label="CRM"
+          icon={Target}
+          collapsed={collapsed}
+          features={features}
+          onLockedClick={handleLocked}
+          defaultOpen={true}
+          items={[
+            { to: '/crm/leads',         icon: UserCircle,  label: 'Leads' },
+            { to: '/crm/contacts',      icon: Users,       label: 'Contactos' },
+            { to: '/crm/accounts',      icon: Building2,   label: 'Empresas' },
+            { to: '/crm/opportunities', icon: Target,      label: 'Oportunidades' },
+            { to: '/crm/activities',    icon: Zap,         label: 'Actividades' },
+            { to: '/crm/tasks',         icon: CheckSquare, label: 'Tareas' },
+            { to: '/crm/quotes',        icon: FileText,    label: 'Cotizaciones' },
+          ]}
+        />
 
         {/* ERP */}
-        {!collapsed && <SectionLabel label="Finanzas & ERP" />}
+        {!collapsed && <div className="pt-3 pb-1 px-1">
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Finanzas & ERP</span>
+        </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
-        {navItem('/erp/products', Package, 'Productos', { feature: 'erp' })}
-        {navItem('/erp/suppliers', Truck, 'Proveedores', { feature: 'erp' })}
-        {navItem('/erp/invoices', ReceiptText, 'Facturas', { feature: 'erp' })}
-        {navItem('/erp/inventory', Boxes, 'Inventario', { feature: 'erp' })}
+
+        <CollapsibleSection
+          label="Finanzas & ERP"
+          icon={ReceiptText}
+          collapsed={collapsed}
+          features={features}
+          onLockedClick={handleLocked}
+          items={[
+            { to: '/erp/products',   icon: Package,     label: 'Productos',   feature: 'erp' },
+            { to: '/erp/suppliers',  icon: Truck,       label: 'Proveedores', feature: 'erp' },
+            { to: '/erp/invoices',   icon: ReceiptText, label: 'Facturas',    feature: 'erp' },
+            { to: '/erp/inventory',  icon: Boxes,       label: 'Inventario',  feature: 'erp' },
+          ]}
+        />
 
         {/* Marketing */}
-        {!collapsed && <SectionLabel label="Marketing" />}
+        {!collapsed && <div className="pt-3 pb-1 px-1">
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Marketing</span>
+        </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
-        {navItem('/marketing', Megaphone, 'Campañas', { feature: 'marketing' })}
-        {navItem('/landing', Globe, 'Landing Pages', { feature: 'landing' })}
+
+        <CollapsibleSection
+          label="Marketing"
+          icon={Megaphone}
+          collapsed={collapsed}
+          features={features}
+          onLockedClick={handleLocked}
+          items={[
+            { to: '/marketing', icon: Megaphone, label: 'Campañas',      feature: 'marketing' },
+            { to: '/landing',   icon: Globe,     label: 'Landing Pages', feature: 'landing' },
+          ]}
+        />
 
         {/* Herramientas */}
-        {!collapsed && <SectionLabel label="Herramientas" />}
+        {!collapsed && <div className="pt-3 pb-1 px-1">
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Herramientas</span>
+        </div>}
         {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
-        {navItem('/whatsapp-agent', MessageCircle, 'WhatsApp Agent', { badge: unreadCount > 0 ? unreadCount : undefined })}
-        {navItem('/ai', Bot, 'IA & Automatización', { feature: 'ai' })}
-        {navItem('/reports', BarChart3, 'Reportes')}
-        {navItem('/users', Users2, 'Usuarios')}
+
+        <CollapsibleSection
+          label="Herramientas"
+          icon={Zap}
+          collapsed={collapsed}
+          features={features}
+          onLockedClick={handleLocked}
+          items={[
+            { to: '/whatsapp-agent', icon: MessageCircle, label: 'WhatsApp Agent',    badge: unreadCount > 0 ? unreadCount : undefined },
+            { to: '/ai',             icon: Bot,           label: 'IA & Automatización', feature: 'ai' },
+            { to: '/reports',        icon: BarChart3,     label: 'Reportes' },
+            { to: '/users',          icon: Users2,        label: 'Usuarios' },
+          ]}
+        />
       </nav>
 
-      {/* ── Bottom: Configuración + User ── */}
+      {/* ── Bottom ── */}
       <div className="relative px-2 py-3 space-y-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.055)' }}>
-        <NavItem
-          to="/settings"
-          icon={Settings}
-          label="Configuración"
-          collapsed={collapsed}
-        />
+        <NavItem to="/settings" icon={Settings} label="Configuración" collapsed={collapsed} />
 
         {!collapsed && user && (
           <NavLink
             to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-all duration-150 group mt-1"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/[0.05] transition-all duration-150 mt-1"
           >
             <Avatar name={`${user.firstName} ${user.lastName}`} size="sm" />
             <div className="flex-1 min-w-0">
