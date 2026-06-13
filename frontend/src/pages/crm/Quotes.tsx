@@ -441,19 +441,27 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
 
 // ─── Quote Row ────────────────────────────────────────────────────
 
-function QuoteRow({ quote, onSelect, onDelete, onChangeStatus }: {
+function QuoteRow({ quote, onSelect, onDelete, onChangeStatus, checked, onCheck }: {
   quote: Quote;
   onSelect: () => void;
   onDelete: () => void;
   onChangeStatus: (status: string) => void;
+  checked?: boolean;
+  onCheck?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const cfg = STATUS_CONFIG[quote.status] || STATUS_CONFIG.draft;
   const Icon = cfg.icon;
 
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5 border-b border-gray-100 last:border-0 group hover:bg-gray-50 transition-colors cursor-pointer"
+    <div className={`flex items-center gap-4 px-5 py-3.5 border-b border-gray-100 last:border-0 group hover:bg-gray-50 transition-colors cursor-pointer ${checked ? 'bg-blue-50' : ''}`}
       onClick={onSelect}>
+      {onCheck && (
+        <div onClick={e => e.stopPropagation()} className="flex-shrink-0">
+          <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
+            checked={checked ?? false} onChange={() => onCheck()} />
+        </div>
+      )}
       <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0">
         <FileText className="w-5 h-5 text-primary-600" />
       </div>
@@ -522,6 +530,8 @@ export function Quotes() {
   const [editing, setEditing] = useState<Quote | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['quotes', statusFilter, search],
@@ -567,6 +577,35 @@ export function Quotes() {
   });
 
   const quotes = data?.quotes || [];
+
+  const toggleBulkOne = (id: string) => {
+    setBulkSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleBulkAll = () => {
+    if (bulkSelected.size === quotes.length) {
+      setBulkSelected(new Set());
+    } else {
+      setBulkSelected(new Set(quotes.map(q => q.id)));
+    }
+  };
+  const handleBulkDelete = async () => {
+    if (!confirm(`¿Eliminar ${bulkSelected.size} cotización(es) seleccionada(s)?`)) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all([...bulkSelected].map(id => quotesService.delete(id)));
+      invalidate();
+      setBulkSelected(new Set());
+      toast.success(`${bulkSelected.size} cotización(es) eliminada(s)`);
+    } catch {
+      toast.error('Error al eliminar algunas cotizaciones');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   // ─── Detail view ─────────────────────────────────────────────────
   if (selectedId) {
@@ -669,6 +708,31 @@ export function Quotes() {
 
       {/* List */}
       <Card padding="none" className="overflow-hidden">
+        {bulkSelected.size > 0 && (
+          <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+            <div className="flex items-center gap-3">
+              <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
+                checked={quotes.length > 0 && bulkSelected.size === quotes.length}
+                onChange={toggleBulkAll} />
+              <span className="text-sm font-medium text-blue-800">
+                {bulkSelected.size} cotización{bulkSelected.size > 1 ? 'es' : ''} seleccionada{bulkSelected.size > 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setBulkSelected(new Set())} className="text-xs text-blue-600 hover:underline px-2 py-1">
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="flex items-center gap-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 rounded-lg px-3 py-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {bulkDeleting ? 'Eliminando...' : 'Eliminar seleccionadas'}
+              </button>
+            </div>
+          </div>
+        )}
         {isLoading ? (
           <div className="py-20 text-center text-gray-400">Cargando cotizaciones...</div>
         ) : quotes.length === 0 ? (
@@ -678,13 +742,23 @@ export function Quotes() {
           </div>
         ) : (
           <div>
+            {quotes.length > 0 && bulkSelected.size === 0 && (
+              <div className="flex items-center gap-2 px-5 py-2 border-b border-gray-100 bg-gray-50">
+                <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
+                  checked={false}
+                  onChange={toggleBulkAll} />
+                <span className="text-xs text-gray-400">Seleccionar todo</span>
+              </div>
+            )}
             {quotes.map(q => (
               <QuoteRow
                 key={q.id}
                 quote={q}
-                onSelect={() => setSelectedId(q.id)}
+                onSelect={() => { if (bulkSelected.size > 0) { toggleBulkOne(q.id); } else { setSelectedId(q.id); } }}
                 onDelete={() => { if (confirm('¿Eliminar cotización?')) deleteMut.mutate(q.id); }}
                 onChangeStatus={status => statusMut.mutate({ id: q.id, status })}
+                checked={bulkSelected.has(q.id)}
+                onCheck={() => toggleBulkOne(q.id)}
               />
             ))}
           </div>

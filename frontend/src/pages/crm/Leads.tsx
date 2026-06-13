@@ -390,6 +390,8 @@ export function Leads() {
   const [editing, setEditing] = useState<Lead | null>(null);
   const [showApollo, setShowApollo] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -432,6 +434,36 @@ export function Leads() {
   });
 
   const leads = data?.leads || [];
+
+  const toggleAll = () => {
+    if (selected.size === leads.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(leads.map(l => l.id)));
+    }
+  };
+  const toggleOne = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const handleBulkDelete = async () => {
+    if (!confirm(`¿Eliminar ${selected.size} lead(s) seleccionado(s)?`)) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all([...selected].map(id => leadsService.delete(id)));
+      qc.invalidateQueries({ queryKey: ['leads'] });
+      qc.invalidateQueries({ queryKey: ['lead-stats'] });
+      setSelected(new Set());
+      toast.success(`${selected.size} lead(s) eliminado(s)`);
+    } catch {
+      toast.error('Error al eliminar algunos leads');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   // Group by status for kanban
   const kanbanCols = STATUSES.filter(s => s !== 'converted').map(status => ({
@@ -511,6 +543,26 @@ export function Leads() {
       {/* Table View */}
       {view === 'table' && (
         <Card padding="none" className="overflow-hidden">
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+              <span className="text-sm font-medium text-blue-800">
+                {selected.size} lead{selected.size > 1 ? 's' : ''} seleccionado{selected.size > 1 ? 's' : ''}
+              </span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelected(new Set())} className="text-xs text-blue-600 hover:underline px-2 py-1">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {bulkDeleting ? 'Eliminando...' : 'Eliminar seleccionados'}
+                </button>
+              </div>
+            </div>
+          )}
           {isLoading ? (
             <div className="py-20 text-center text-gray-400">Cargando...</div>
           ) : leads.length === 0 ? (
@@ -522,6 +574,11 @@ export function Leads() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-4 py-3 w-8">
+                      <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
+                        checked={leads.length > 0 && selected.size === leads.length}
+                        onChange={toggleAll} />
+                    </th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">Nombre</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">Empresa</th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">Estado</th>
@@ -534,7 +591,12 @@ export function Leads() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {leads.map(lead => (
-                    <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={lead.id} className={`hover:bg-gray-50 transition-colors ${selected.has(lead.id) ? 'bg-blue-50' : ''}`}>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
+                          checked={selected.has(lead.id)}
+                          onChange={() => toggleOne(lead.id)} />
+                      </td>
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-medium text-gray-900">{lead.firstName} {lead.lastName}</p>
