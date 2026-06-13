@@ -6,8 +6,10 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, Users, Target, CheckSquare, Phone,
-  Mail, Calendar, FileText, ArrowRight, AlertCircle, ChevronLeft, ChevronRight
+  Mail, Calendar, FileText, ArrowRight, AlertCircle, ChevronLeft, ChevronRight,
+  Download,
 } from 'lucide-react';
+import { downloadDashboardPDF } from '@/utils/pdf';
 import { dashboardService } from '@/services/dashboard.service';
 import { useAuthStore } from '@/store/authStore';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -123,7 +125,16 @@ export function Dashboard() {
             {company?.name} · <span className="text-primary-600 font-medium">{periodLabel}</span>
           </p>
         </div>
-        <Button leftIcon={<Target className="w-4 h-4" />}>Nuevo Lead</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            leftIcon={<Download className="w-4 h-4" />}
+            onClick={() => downloadDashboardPDF(data!, periodLabel, company?.name ?? 'PROSPERA.AI', company?.currency ?? 'MXN')}
+          >
+            Descargar Informe
+          </Button>
+          <Button leftIcon={<Target className="w-4 h-4" />}>Nuevo Lead</Button>
+        </div>
       </div>
 
       {/* ── Date Filter Bar ── */}

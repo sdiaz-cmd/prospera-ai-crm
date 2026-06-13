@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, FileText, CheckCircle, XCircle, Send, Clock, Trash2,
-  ChevronRight, MoreVertical, ArrowLeft, PlusCircle, X,
+  ChevronRight, MoreVertical, ArrowLeft, PlusCircle, X, Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { quotesService } from '@/services/crm.service';
 import { Quote, QuoteItem } from '@/types';
+import { downloadQuotePDF } from '@/utils/pdf';
+import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -253,8 +255,13 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
   onDelete: () => void;
   onChangeStatus: (status: string) => void;
 }) {
+  const { company } = useAuthStore();
   const cfg = STATUS_CONFIG[quote.status] || STATUS_CONFIG.draft;
   const Icon = cfg.icon;
+
+  const handleDownloadPDF = () => {
+    downloadQuotePDF(quote, company?.name ?? 'PROSPERA.AI', company?.currency ?? 'MXN');
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -287,6 +294,14 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
               </Button>
             </>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadPDF}
+            leftIcon={<Download className="w-3.5 h-3.5" />}
+          >
+            Descargar PDF
+          </Button>
           <Button size="sm" variant="outline" onClick={onEdit}>Editar</Button>
           <button onClick={onDelete} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
             <Trash2 className="w-4 h-4" />
