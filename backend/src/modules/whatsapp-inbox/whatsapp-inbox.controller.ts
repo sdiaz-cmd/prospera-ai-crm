@@ -38,3 +38,11 @@ export const getUnreadCount = async (req: AuthenticatedRequest, res: Response, n
     sendSuccess(res, { count });
   } catch (err) { next(err); }
 };
+
+export const deleteConversation = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { phone } = req.params;
+    whatsAppInboxService.deleteConversation(req.user!.companyId, decodeURIComponent(phone));
+    sendSuccess(res, null, 'Conversación eliminada');
+  } catch (err) { next(err); }
+};

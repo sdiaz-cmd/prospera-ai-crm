@@ -200,6 +200,13 @@ export class WhatsAppInboxService {
     }
   }
 
+  // ── Delete conversation ────────────────────────────────────────────
+
+  deleteConversation(companyId: string, phone: string): void {
+    run('DELETE FROM whatsapp_messages WHERE company_id = ? AND phone = ?', [companyId, phone]);
+    run('DELETE FROM whatsapp_conversations WHERE company_id = ? AND phone = ?', [companyId, phone]);
+  }
+
   // ── Send message (via Baileys) ─────────────────────────────────────
 
   async sendMessage(companyId: string, phone: string, body: string): Promise<void> {

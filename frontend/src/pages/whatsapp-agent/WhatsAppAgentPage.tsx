@@ -62,6 +62,7 @@ function ConvAvatar({ name, isContact }: { name: string; isContact: boolean }) {
 function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: () => void }) {
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const qc = useQueryClient();
 
@@ -87,6 +88,19 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
       qc.invalidateQueries({ queryKey: ['wa-conversations'] });
     },
     onError: () => toast.error('Error al enviar el mensaje'),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (phone: string) =>
+      api.delete(`/whatsapp/conversations/${encodeURIComponent(phone)}`),
+    onSuccess: (_data, phone) => {
+      toast.success('Chat eliminado');
+      if (selectedPhone === phone) setSelectedPhone(null);
+      setConfirmDelete(null);
+      qc.invalidateQueries({ queryKey: ['wa-conversations'] });
+      qc.removeQueries({ queryKey: ['wa-messages', phone] });
+    },
+    onError: () => toast.error('Error al eliminar el chat'),
   });
 
   useEffect(() => {
@@ -156,51 +170,63 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
             </div>
           ) : (
             conversations.map(conv => (
-              <button
+              <div
                 key={conv.phone}
-                onClick={() => setSelectedPhone(conv.phone)}
                 className={cn(
-                  'w-full px-4 py-3.5 text-left transition-colors border-b border-gray-100/70',
+                  'group relative border-b border-gray-100/70 border-l-2 transition-colors',
                   selectedPhone === conv.phone
-                    ? 'bg-primary-50 border-l-2 border-l-primary-600'
-                    : 'hover:bg-white border-l-2 border-l-transparent'
+                    ? 'bg-primary-50 border-l-primary-600'
+                    : 'hover:bg-white border-l-transparent'
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <ConvAvatar name={conv.contactName} isContact={!!conv.contactId} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className={cn(
-                        'text-sm truncate',
-                        conv.unreadCount > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
-                      )}>
-                        {conv.contactName}
-                      </span>
-                      <span className="text-[11px] text-gray-400 flex-shrink-0 ml-1">{timeAgo(conv.lastMessageAt)}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-400 truncate">{conv.lastMessage || 'Sin mensajes'}</p>
-                      {conv.unreadCount > 0 && (
-                        <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
-                          {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                <button
+                  onClick={() => setSelectedPhone(conv.phone)}
+                  className="w-full px-4 py-3.5 text-left pr-10"
+                >
+                  <div className="flex items-center gap-3">
+                    <ConvAvatar name={conv.contactName} isContact={!!conv.contactId} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className={cn(
+                          'text-sm truncate',
+                          conv.unreadCount > 0 ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
+                        )}>
+                          {conv.contactName}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {conv.contactId && (
-                        <span className="text-[10px] text-primary-600 font-medium flex items-center gap-0.5">
-                          <User className="w-2.5 h-2.5" /> Contacto
-                        </span>
-                      )}
-                      {conv.leadId && !conv.contactId && (
-                        <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
-                          <Circle className="w-2.5 h-2.5" /> Lead
-                        </span>
-                      )}
+                        <span className="text-[11px] text-gray-400 flex-shrink-0 ml-1">{timeAgo(conv.lastMessageAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-400 truncate">{conv.lastMessage || 'Sin mensajes'}</p>
+                        {conv.unreadCount > 0 && (
+                          <span className="ml-2 min-w-[18px] h-[18px] rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center px-1 flex-shrink-0">
+                            {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {conv.contactId && (
+                          <span className="text-[10px] text-primary-600 font-medium flex items-center gap-0.5">
+                            <User className="w-2.5 h-2.5" /> Contacto
+                          </span>
+                        )}
+                        {conv.leadId && !conv.contactId && (
+                          <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
+                            <Circle className="w-2.5 h-2.5" /> Lead
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                {/* Delete button — visible on hover */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(conv.phone); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                  title="Eliminar chat"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -322,6 +348,38 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
           </>
         )}
       </div>
+
+      {/* ── Confirm delete modal ──────────────────────────────────── */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-80 mx-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">¿Eliminar este chat?</p>
+                <p className="text-xs text-gray-500">Se borrarán todos los mensajes de forma permanente.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-4 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteMut.mutate(confirmDelete)}
+                disabled={deleteMut.isPending}
+                className="flex-1 px-4 py-2 text-sm text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 rounded-xl transition-colors"
+              >
+                {deleteMut.isPending ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
