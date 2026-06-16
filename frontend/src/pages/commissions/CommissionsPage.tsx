@@ -454,6 +454,148 @@ function RulesPanel({
   );
 }
 
+// ─── ExecutiveSelfModal ───────────────────────────────────────────────────────
+
+function ExecutiveSelfModal({
+  myRules, onClose, onSaved,
+}: {
+  myRules: CommissionRule[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [ruleId, setRuleId] = useState('');
+  const [sourceDescription, setSourceDescription] = useState('');
+  const [baseAmount, setBaseAmount] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const selectedRule = myRules.find(r => r.id === ruleId);
+  const commissionAmount = selectedRule ? Number(baseAmount) * (selectedRule.percentage / 100) : 0;
+
+  const mut = useMutation({
+    mutationFn: () => api.post('/commissions/self', {
+      ruleId, sourceDescription, baseAmount: Number(baseAmount),
+      notes: notes.trim() || undefined,
+    }),
+    onSuccess: () => { toast.success('Comisión registrada'); onSaved(); onClose(); },
+    onError: () => toast.error('Error al registrar'),
+  });
+
+  const valid = ruleId && sourceDescription.trim() && Number(baseAmount) > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-[#111827] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <div>
+            <h3 className="text-base font-semibold text-white">Registrar comisión</h3>
+            <p className="text-xs text-gray-500 mt-0.5">El porcentaje lo define tu administrador</p>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+
+          {myRules.length === 0 ? (
+            <div className="text-center py-6">
+              <AlertCircle className="w-8 h-8 text-amber-500/60 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No tienes categorías de comisión asignadas.</p>
+              <p className="text-xs text-gray-600 mt-1">Contacta a tu administrador para que configure tus reglas.</p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Categoría de venta</label>
+                <select
+                  value={ruleId}
+                  onChange={e => setRuleId(e.target.value)}
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-primary-600/50"
+                >
+                  <option value="">Seleccionar categoría...</option>
+                  {myRules.map(r => (
+                    <option key={r.id} value={r.id}>{r.categoryName}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedRule && (
+                <div className="flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-500">Tu porcentaje asignado</p>
+                    <p className="text-lg font-bold text-emerald-400">{selectedRule.percentage}%</p>
+                  </div>
+                  <div className="w-px h-8 bg-white/[0.06]" />
+                  <div className="flex-1 text-right">
+                    <p className="text-xs text-gray-500">Categoría</p>
+                    <p className="text-sm font-medium text-gray-300">{selectedRule.categoryName}</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Descripción de la venta</label>
+                <input
+                  value={sourceDescription}
+                  onChange={e => setSourceDescription(e.target.value)}
+                  placeholder="ej. Venta plan Growth a Empresa ABC"
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-primary-600/50"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Monto de la venta (base)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                  <input
+                    type="number" min="0"
+                    value={baseAmount}
+                    onChange={e => setBaseAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-white/[0.05] border border-white/10 rounded-xl pl-6 pr-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-primary-600/50"
+                  />
+                </div>
+              </div>
+
+              {commissionAmount > 0 && (
+                <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+                  <span className="text-sm text-emerald-400 font-medium">Tu comisión estimada</span>
+                  <span className="text-xl font-bold text-emerald-400">{fmt(commissionAmount)}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-medium text-gray-400 mb-1.5 block">Notas (opcional)</label>
+                <textarea
+                  rows={2}
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Detalles adicionales..."
+                  className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-primary-600/50 resize-none"
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-3 p-5 border-t border-white/10">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.05] text-gray-300 hover:bg-white/[0.08] text-sm font-medium transition-colors">
+            Cancelar
+          </button>
+          {myRules.length > 0 && (
+            <button
+              onClick={() => mut.mutate()}
+              disabled={!valid || mut.isPending}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white text-sm font-medium transition-colors"
+            >
+              {mut.isPending ? 'Registrando...' : 'Registrar comisión'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 type Tab = 'cuenta' | 'gestion' | 'reglas';
@@ -468,6 +610,7 @@ export function CommissionsPage() {
   const [filterUserId, setFilterUserId] = useState('');
   const [showRuleModal, setShowRuleModal] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [showSelfModal, setShowSelfModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Summary (own or filtered)
@@ -486,20 +629,18 @@ export function CommissionsPage() {
     queryFn: () => api.get(`/commissions?${recordsParams}`).then(r => r.data.data),
   });
 
-  // Rules (admin only)
+  // Rules — admin gets all, executive gets only their own
   const { data: rules = [] } = useQuery<CommissionRule[]>({
     queryKey: ['commissions-rules'],
     queryFn: () => api.get('/commissions/rules').then(r => r.data.data),
-    enabled: isAdmin,
   });
 
   // Users (for admin selects)
-  const { data: usersData } = useQuery<{ users: UserOption[] }>({
+  const { data: users = [] } = useQuery<UserOption[]>({
     queryKey: ['users-list'],
     queryFn: () => api.get('/users?limit=200').then(r => r.data.data),
     enabled: isAdmin,
   });
-  const users = usersData?.users || [];
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['commissions-summary'] });
@@ -550,14 +691,24 @@ export function CommissionsPage() {
           </p>
         </div>
 
-        {isAdmin && tab === 'gestion' && (
-          <button
-            onClick={() => setShowManualModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Registrar manual
-          </button>
-        )}
+        <div className="flex gap-2">
+          {!isAdmin && tab === 'cuenta' && (
+            <button
+              onClick={() => setShowSelfModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Registrar venta
+            </button>
+          )}
+          {isAdmin && tab === 'gestion' && (
+            <button
+              onClick={() => setShowManualModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Registrar manual
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -666,6 +817,9 @@ export function CommissionsPage() {
       )}
       {showManualModal && (
         <ManualRecordModal users={users} onClose={() => setShowManualModal(false)} onSaved={invalidate} />
+      )}
+      {showSelfModal && (
+        <ExecutiveSelfModal myRules={rules} onClose={() => setShowSelfModal(false)} onSaved={invalidate} />
       )}
 
       {/* Delete confirm */}

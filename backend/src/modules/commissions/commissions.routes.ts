@@ -3,6 +3,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 import {
   getRules, createRule, updateRule, deleteRule,
   getRecords, createRecord, updateRecordStatus, deleteRecord, getSummary,
+  selfRegisterRecord,
 } from './commissions.controller';
 
 const router = Router();
@@ -17,7 +18,8 @@ router.delete('/rules/:id', deleteRule);
 // Records (actual commission entries)
 router.get('/summary',      getSummary);
 router.get('/',             getRecords);
-router.post('/',            createRecord);
+router.post('/',            createRecord);          // admin only
+router.post('/self',        selfRegisterRecord);    // any authenticated user
 router.patch('/:id/status', updateRecordStatus);
 router.delete('/:id',       deleteRecord);
 

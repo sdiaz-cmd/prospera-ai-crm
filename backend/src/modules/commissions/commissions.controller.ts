@@ -116,3 +116,20 @@ export const getSummary = async (req: AuthenticatedRequest, res: Response, next:
     sendSuccess(res, commissionsService.getSummary(req.user!.companyId, userId));
   } catch (err) { next(err); }
 };
+
+export const selfRegisterRecord = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { ruleId, sourceDescription, baseAmount, notes } = req.body as {
+      ruleId?: string; sourceDescription?: string; baseAmount?: number; notes?: string;
+    };
+    if (!ruleId || !sourceDescription?.trim() || baseAmount === undefined) {
+      sendError(res, 'ruleId, sourceDescription y baseAmount son requeridos', 400); return;
+    }
+    const record = commissionsService.selfRegister({
+      companyId: req.user!.companyId, userId: req.user!.userId,
+      ruleId, sourceDescription: sourceDescription.trim(),
+      baseAmount: Number(baseAmount), notes,
+    });
+    sendSuccess(res, record, 'Comisión registrada', 201);
+  } catch (err) { next(err); }
+};

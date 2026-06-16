@@ -216,6 +216,25 @@ export class CommissionsService {
     };
   }
 
+  // ── Self-register (executive, locked to rule percentage) ──────────
+
+  selfRegister(data: {
+    companyId: string; userId: string; ruleId: string;
+    sourceDescription: string; baseAmount: number; notes?: string;
+  }): CommissionRecord {
+    const rule = get<RuleRow>(
+      'SELECT * FROM commission_rules WHERE id = ? AND company_id = ? AND user_id = ?',
+      [data.ruleId, data.companyId, data.userId]
+    );
+    if (!rule) throw new Error('Regla no válida para este usuario');
+
+    return this.createRecord({
+      companyId: data.companyId, userId: data.userId, ruleId: data.ruleId,
+      sourceType: 'manual', sourceDescription: data.sourceDescription,
+      baseAmount: data.baseAmount, percentage: rule.percentage, notes: data.notes,
+    });
+  }
+
   // ── Auto-register from quote ──────────────────────────────────────
 
   autoRegisterFromQuote(companyId: string, quoteId: string, assigneeId: string, total: number, quoteNumber: string): void {
