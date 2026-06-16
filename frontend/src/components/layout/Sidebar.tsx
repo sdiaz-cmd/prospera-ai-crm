@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Building2, Target, UserCircle,
   Megaphone, BarChart3, Settings, Boxes,
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
-  ChevronDown, TicketIcon,
+  ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
 import { useAuthStore } from '@/store/authStore';
 import { Avatar } from '../ui/Avatar';
@@ -251,6 +251,161 @@ function CollapsibleSection({
   );
 }
 
+// ─── Company Switcher ─────────────────────────────────────────────────────────
+
+interface MyCompany {
+  id: string; name: string; slug: string; plan: string;
+  isOwner: boolean; role: { id: string; name: string };
+}
+
+function CompanySwitcher({ collapsed }: { collapsed: boolean }) {
+  const { company, user, setAuth, isOwner } = useAuthStore();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { data: companies = [] } = useQuery<MyCompany[]>({
+    queryKey: ['my-companies'],
+    queryFn: () => api.get('/auth/companies').then(r => r.data.data),
+  });
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const switchMut = useMutation({
+    mutationFn: (companyId: string) => api.post('/auth/switch-company', { companyId }),
+    onSuccess: async (res, companyId) => {
+      const data = res.data.data;
+      // Fetch user info (we need user object - it's the same user)
+      setAuth({
+        user: user!,
+        company: data.company,
+        role: data.role,
+        permissions: data.permissions,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        isOwner: data.isOwner,
+      });
+      qc.clear(); // Invalida todo el caché
+      setOpen(false);
+      toast.success(`Cambiado a ${data.company.name}`);
+      window.location.href = '/dashboard';
+    },
+    onError: () => toast.error('Error al cambiar empresa'),
+  });
+
+  const createMut = useMutation({
+    mutationFn: () => api.post('/auth/create-branch', { companyName: newName }),
+    onSuccess: (res) => {
+      toast.success(`Empresa "${newName}" creada`);
+      setNewName(''); setShowCreate(false);
+      qc.invalidateQueries({ queryKey: ['my-companies'] });
+      // Switch to new company
+      switchMut.mutate(res.data.data.id);
+    },
+    onError: () => toast.error('Error al crear empresa'),
+  });
+
+  if (collapsed) {
+    return (
+      <div
+        className="mx-2 my-1 px-1.5 py-1.5 rounded-lg cursor-pointer hover:bg-white/[0.05] transition-colors flex items-center justify-center"
+        title={company?.name}
+      >
+        <div className="w-6 h-6 rounded-md bg-primary-600/30 flex items-center justify-center text-[11px] font-bold text-primary-300">
+          {company?.name?.[0]?.toUpperCase() || 'E'}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className="relative mx-2 my-1.5">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] transition-colors group"
+      >
+        <div className="w-7 h-7 rounded-lg bg-primary-600/25 flex items-center justify-center text-[12px] font-bold text-primary-300 flex-shrink-0">
+          {company?.name?.[0]?.toUpperCase() || 'E'}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-[12px] font-semibold text-gray-300 truncate leading-none">{company?.name || '—'}</p>
+          <p className="text-[10px] text-gray-600 mt-0.5">{companies.length > 1 ? `${companies.length} empresas` : 'Mi empresa'}</p>
+        </div>
+        <ChevronsUpDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0 group-hover:text-gray-400 transition-colors" />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#111827] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+          <div className="py-1">
+            {companies.map(c => (
+              <button
+                key={c.id}
+                disabled={c.id === company?.id || switchMut.isPending}
+                onClick={() => switchMut.mutate(c.id)}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors',
+                  c.id === company?.id
+                    ? 'bg-white/[0.06] cursor-default'
+                    : 'hover:bg-white/[0.04]'
+                )}
+              >
+                <div className="w-6 h-6 rounded-md bg-primary-600/20 flex items-center justify-center text-[11px] font-bold text-primary-400 flex-shrink-0">
+                  {c.name[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-medium text-gray-300 truncate">{c.name}</p>
+                  <p className="text-[10px] text-gray-600">{c.role.name}</p>
+                </div>
+                {c.id === company?.id && <Check className="w-3.5 h-3.5 text-primary-400 flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+
+          {isOwner && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} className="p-2">
+              {showCreate ? (
+                <div className="flex gap-1.5">
+                  <input
+                    autoFocus
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) createMut.mutate(); if (e.key === 'Escape') setShowCreate(false); }}
+                    placeholder="Nombre de la empresa..."
+                    className="flex-1 text-[12px] bg-white/[0.05] border border-white/10 rounded-lg px-2.5 py-1.5 text-gray-300 placeholder-gray-600 focus:outline-none focus:border-primary-600/50"
+                  />
+                  <button
+                    onClick={() => { if (newName.trim()) createMut.mutate(); }}
+                    disabled={!newName.trim() || createMut.isPending}
+                    className="px-2.5 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:opacity-40 text-white rounded-lg text-[11px] font-medium transition-colors"
+                  >
+                    {createMut.isPending ? '...' : 'Crear'}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[12px] text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] rounded-lg transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Nueva empresa / sucursal
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar({ collapsed }: { collapsed: boolean }) {
@@ -317,6 +472,11 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
             )}
           </div>
         )}
+      </div>
+
+      {/* ── Company Switcher ── */}
+      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.055)' }}>
+        <CompanySwitcher collapsed={collapsed} />
       </div>
 
       {/* ── Navigation ── */}

@@ -120,6 +120,128 @@ export class AuthService {
     };
   }
 
+  // ── Multi-empresa: listar empresas del usuario ────────────────────
+
+  getMyCompanies(userId: string) {
+    const rows = all<Record<string, unknown>>(
+      `SELECT c.id, c.name, c.slug, c.logo_url, c.plan, c.currency, c.timezone,
+              uc.is_owner, r.id as role_id, r.name as role_name
+       FROM user_companies uc
+       JOIN companies c ON uc.company_id = c.id
+       JOIN roles r ON uc.role_id = r.id
+       WHERE uc.user_id = ? AND uc.is_active = 1 AND c.is_active = 1
+       ORDER BY c.name ASC`,
+      [userId]
+    );
+    return rows.map(r => ({
+      id: r.id, name: r.name, slug: r.slug, logoUrl: r.logo_url,
+      plan: r.plan, currency: r.currency, timezone: r.timezone,
+      isOwner: !!(r.is_owner),
+      role: { id: r.role_id, name: r.role_name },
+    }));
+  }
+
+  // ── Multi-empresa: cambiar empresa activa ─────────────────────────
+
+  async switchCompany(userId: string, email: string, targetCompanyId: string) {
+    const uc = get<Record<string, unknown>>(
+      `SELECT uc.*, r.id as role_id, r.name as role_name
+       FROM user_companies uc
+       JOIN roles r ON uc.role_id = r.id
+       WHERE uc.user_id = ? AND uc.company_id = ? AND uc.is_active = 1`,
+      [userId, targetCompanyId]
+    );
+    if (!uc) throw new Error('No tienes acceso a esta empresa');
+
+    const company = get<Record<string, unknown>>(
+      'SELECT * FROM companies WHERE id = ? AND is_active = 1', [targetCompanyId]
+    );
+    if (!company) throw new Error('Empresa no encontrada');
+
+    const perms = all<{ module: string; action: string }>(
+      'SELECT p.module, p.action FROM role_permissions rp JOIN permissions p ON rp.permission_id = p.id WHERE rp.role_id = ?',
+      [uc.role_id]
+    );
+    const permissions = perms.map(p => `${p.module}:${p.action}`);
+
+    const tokens = this.generateTokens(userId, targetCompanyId, email);
+    this.saveRefreshToken(userId, tokens.refreshToken);
+
+    return {
+      company: {
+        id: company.id, name: company.name, slug: company.slug,
+        plan: company.plan, logoUrl: company.logo_url,
+        currency: company.currency, timezone: company.timezone,
+      },
+      role: { id: uc.role_id, name: uc.role_name },
+      permissions,
+      isOwner: !!(uc.is_owner),
+      ...tokens,
+    };
+  }
+
+  // ── Multi-empresa: crear nueva empresa/sucursal ───────────────────
+
+  async createBranch(userId: string, email: string, companyName: string) {
+    const slug = this.generateSlug(companyName);
+    const slugExists = get('SELECT id FROM companies WHERE slug = ?', [slug]);
+    const finalSlug = slugExists ? `${slug}-${uuid().slice(0, 8)}` : slug;
+
+    const companyId = uuid();
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+    run(`INSERT INTO companies (id, name, slug, email, plan, trial_ends_at) VALUES (?, ?, ?, ?, 'trial', ?)`,
+      [companyId, companyName, finalSlug, email, trialEndsAt]);
+
+    const allPerms = all<{ id: string }>('SELECT id FROM permissions');
+
+    // Rol Administrador para la nueva empresa
+    const adminId = uuid();
+    run('INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
+      [adminId, companyId, 'Administrador', 'Acceso completo a toda la plataforma']);
+    for (const perm of allPerms) {
+      run('INSERT INTO role_permissions (id, role_id, permission_id) VALUES (?, ?, ?)', [uuid(), adminId, perm.id]);
+    }
+
+    // Roles por defecto
+    const defaultRoles = [
+      { name: 'Gerente',             description: 'Acceso a CRM, reportes y gestión de equipo' },
+      { name: 'Ejecutivo de Ventas', description: 'Acceso a CRM: leads, contactos, oportunidades' },
+      { name: 'Recursos Humanos',    description: 'Gestión de personal y acceso a usuarios' },
+      { name: 'Finanzas',            description: 'Acceso a facturas, cotizaciones y reportes financieros' },
+      { name: 'Marketing',           description: 'Acceso a campañas, landing pages y reportes' },
+      { name: 'Jefe de Bodega',      description: 'Gestión completa de inventario y proveedores' },
+    ];
+    for (const r of defaultRoles) {
+      run('INSERT INTO roles (id, company_id, name, description, is_system) VALUES (?, ?, ?, ?, 1)',
+        [uuid(), companyId, r.name, r.description]);
+    }
+
+    // Pipeline por defecto
+    const pipelineId = uuid();
+    run('INSERT INTO pipelines (id, company_id, name, is_default) VALUES (?, ?, ?, 1)',
+      [pipelineId, companyId, 'Pipeline Principal']);
+    const stages = [
+      ['Nuevo Lead', 1, 10, '#6366f1'], ['Contactado', 2, 25, '#8b5cf6'],
+      ['Calificado', 3, 40, '#3b82f6'], ['Propuesta', 4, 60, '#f59e0b'],
+      ['Negociación', 5, 75, '#ef4444'], ['Cerrado Ganado', 6, 100, '#10b981'],
+      ['Cerrado Perdido', 7, 0, '#6b7280'],
+    ];
+    for (const [name, order, prob, color] of stages) {
+      run('INSERT INTO pipeline_stages (id, pipeline_id, name, order_index, probability, color) VALUES (?, ?, ?, ?, ?, ?)',
+        [uuid(), pipelineId, name, order, prob, color]);
+    }
+
+    // Asociar usuario actual como owner de la nueva empresa
+    run('INSERT INTO user_companies (id, user_id, company_id, role_id, is_owner, is_active) VALUES (?, ?, ?, ?, 1, 1)',
+      [uuid(), userId, companyId, adminId]);
+
+    return {
+      id: companyId, name: companyName, slug: finalSlug, plan: 'trial',
+      isOwner: true, role: { id: adminId, name: 'Administrador' },
+    };
+  }
+
   async refresh(refreshToken: string) {
     const stored = get<Record<string, unknown>>('SELECT * FROM refresh_tokens WHERE token = ?', [refreshToken]);
     if (!stored || stored.is_revoked || new Date(stored.expires_at as string) < new Date()) throw new Error('Refresh token inválido o expirado');

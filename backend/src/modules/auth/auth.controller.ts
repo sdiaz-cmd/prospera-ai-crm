@@ -152,13 +152,47 @@ export const getMe = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    if (!req.user) {
-      sendError(res, 'No autenticado', 401);
-      return;
-    }
+    if (!req.user) { sendError(res, 'No autenticado', 401); return; }
     const result = await authService.getMe(req.user.userId, req.user.companyId);
     sendSuccess(res, result);
-  } catch (error) {
-    next(error);
-  }
+  } catch (error) { next(error); }
+};
+
+// ── Multi-empresa ─────────────────────────────────────────────────────────────
+
+export const getMyCompanies = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const companies = authService.getMyCompanies(req.user!.userId);
+    sendSuccess(res, companies);
+  } catch (err) { next(err); }
+};
+
+export const switchCompany = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { companyId } = req.body as { companyId?: string };
+    if (!companyId) { sendError(res, 'companyId es requerido', 400); return; }
+    const result = await authService.switchCompany(req.user!.userId, req.user!.email, companyId);
+    sendSuccess(res, result, 'Empresa cambiada');
+  } catch (e: unknown) { sendError(res, (e as Error).message, 403); }
+};
+
+export const createBranch = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { companyName } = req.body as { companyName?: string };
+    if (!companyName?.trim()) { sendError(res, 'Nombre de empresa requerido', 400); return; }
+    const branch = await authService.createBranch(req.user!.userId, req.user!.email, companyName.trim());
+    sendSuccess(res, branch, 'Empresa creada', 201);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 400); }
 };
