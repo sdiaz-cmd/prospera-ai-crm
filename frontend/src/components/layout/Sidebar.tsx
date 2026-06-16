@@ -5,7 +5,7 @@ import {
   Megaphone, BarChart3, Settings, Boxes,
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
-  ChevronDown,
+  ChevronDown, TicketIcon,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -403,6 +403,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
             { to: '/whatsapp-agent', icon: MessageCircle, label: 'WhatsApp Agent',    badge: unreadCount > 0 ? unreadCount : undefined },
             { to: '/ai',             icon: Bot,           label: 'IA & Automatización', feature: 'ai' },
             { to: '/reports',        icon: BarChart3,     label: 'Reportes' },
+            { to: '/tickets',        icon: TicketIcon,    label: 'Soporte' },
             { to: '/users',          icon: Users2,        label: 'Usuarios' },
           ]}
         />

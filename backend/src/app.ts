@@ -44,6 +44,8 @@ import aiRoutes from './modules/ai/ai.routes';
 import apolloRoutes from './modules/apollo/apollo.routes';
 // Invitations
 import invitationsRoutes from './modules/invitations/invitations.routes';
+// Tickets
+import ticketsRoutes from './modules/tickets/tickets.routes';
 // Inventory
 import inventoryRoutes from './modules/inventory/inventory.routes';
 // WhatsApp
@@ -199,6 +201,8 @@ app.use('/api/ai', authenticate, requireFeature('ai'), aiRoutes);
 app.use('/api/apollo', apolloRoutes);
 // Invitations
 app.use('/api/invitations', invitationsRoutes);
+// Tickets
+app.use('/api/tickets', ticketsRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 // WhatsApp

@@ -30,6 +30,7 @@ import { Marketing } from '@/pages/marketing/Marketing';
 import { LandingPages } from '@/pages/landing/LandingPages';
 import { PublicLanding } from '@/pages/landing/PublicLanding';
 import { Reports } from '@/pages/reports/Reports';
+import { TicketsPage } from '@/pages/tickets/TicketsPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -97,6 +98,9 @@ export const router = createBrowserRouter([
 
           // Reportes — Fase 7
           { path: '/reports', element: <Reports /> },
+
+          // Soporte — Tickets
+          { path: '/tickets', element: <TicketsPage /> },
 
           // Perfil
           { path: '/profile', element: <ComingSoon title="Mi Perfil" description="Gestiona tu información personal, foto de perfil y preferencias." phase="Próximamente" /> },

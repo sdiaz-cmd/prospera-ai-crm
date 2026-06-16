@@ -571,6 +571,28 @@ export function createSchema() {
     );
   `);
 
+  // ── Tickets de soporte ────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS support_tickets (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      user_name TEXT NOT NULL,
+      user_email TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'consulta',
+      priority TEXT NOT NULL DEFAULT 'media',
+      status TEXT NOT NULL DEFAULT 'abierto',
+      admin_notes TEXT,
+      resolved_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
   // ── Conversaciones WhatsApp ────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS whatsapp_conversations (
