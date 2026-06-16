@@ -1,6 +1,7 @@
 import { run, get, all } from '../../database/db';
 import { v4 as uuid } from 'uuid';
 import { buildPaginationMeta } from '../../utils/response';
+import { commissionsService } from '../commissions/commissions.service';
 
 interface QuoteItem {
   description: string;
@@ -163,6 +164,21 @@ export class QuotesService {
     if (status === 'rejected') { extra.push('rejected_at = ?'); vals.push(now); }
     const sets = [`status = ?`, ...extra, 'updated_at = ?'].join(', ');
     run(`UPDATE quotes SET ${sets} WHERE id = ?`, [status, ...vals, now, id]);
+
+    // Auto-register commission when quote is accepted
+    if (status === 'accepted') {
+      const quote = get<{ assignee_id: string; total: number; number: string }>(
+        'SELECT assignee_id, total, number FROM quotes WHERE id = ?', [id]
+      );
+      if (quote?.assignee_id && quote.total > 0) {
+        try {
+          commissionsService.autoRegisterFromQuote(
+            companyId, id, quote.assignee_id, quote.total, quote.number
+          );
+        } catch (_) { /* No bloquear si falla el registro */ }
+      }
+    }
+
     return this.findById(id, companyId);
   }
 

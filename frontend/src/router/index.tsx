@@ -31,6 +31,7 @@ import { LandingPages } from '@/pages/landing/LandingPages';
 import { PublicLanding } from '@/pages/landing/PublicLanding';
 import { Reports } from '@/pages/reports/Reports';
 import { TicketsPage } from '@/pages/tickets/TicketsPage';
+import { CommissionsPage } from '@/pages/commissions/CommissionsPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -101,6 +102,9 @@ export const router = createBrowserRouter([
 
           // Soporte — Tickets
           { path: '/tickets', element: <TicketsPage /> },
+
+          // Comisiones
+          { path: '/commissions', element: <CommissionsPage /> },
 
           // Perfil
           { path: '/profile', element: <ComingSoon title="Mi Perfil" description="Gestiona tu información personal, foto de perfil y preferencias." phase="Próximamente" /> },

@@ -571,6 +571,40 @@ export function createSchema() {
     );
   `);
 
+  // ── Comisiones ────────────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS commission_rules (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      category_name TEXT NOT NULL,
+      percentage REAL NOT NULL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS commission_records (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      rule_id TEXT,
+      source_type TEXT NOT NULL DEFAULT 'manual',
+      source_id TEXT,
+      source_description TEXT NOT NULL DEFAULT '',
+      base_amount REAL NOT NULL DEFAULT 0,
+      percentage REAL NOT NULL DEFAULT 0,
+      commission_amount REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pendiente',
+      notes TEXT,
+      paid_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
   // ── Tickets de soporte ────────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS support_tickets (
