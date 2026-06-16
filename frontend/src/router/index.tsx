@@ -32,6 +32,7 @@ import { PublicLanding } from '@/pages/landing/PublicLanding';
 import { Reports } from '@/pages/reports/Reports';
 import { TicketsPage } from '@/pages/tickets/TicketsPage';
 import { CommissionsPage } from '@/pages/commissions/CommissionsPage';
+import { CostCentersPage } from '@/pages/cost-centers/CostCentersPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -105,6 +106,9 @@ export const router = createBrowserRouter([
 
           // Comisiones
           { path: '/commissions', element: <CommissionsPage /> },
+
+          // Centro de costos
+          { path: '/cost-centers', element: <CostCentersPage /> },
 
           // Perfil
           { path: '/profile', element: <ComingSoon title="Mi Perfil" description="Gestiona tu información personal, foto de perfil y preferencias." phase="Próximamente" /> },

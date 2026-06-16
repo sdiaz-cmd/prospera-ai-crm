@@ -48,6 +48,8 @@ import invitationsRoutes from './modules/invitations/invitations.routes';
 import ticketsRoutes from './modules/tickets/tickets.routes';
 // Commissions
 import commissionsRoutes from './modules/commissions/commissions.routes';
+// Cost Centers
+import costCentersRoutes from './modules/cost-centers/cost-centers.routes';
 // Inventory
 import inventoryRoutes from './modules/inventory/inventory.routes';
 // WhatsApp
@@ -207,6 +209,8 @@ app.use('/api/invitations', invitationsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 // Commissions
 app.use('/api/commissions', commissionsRoutes);
+// Cost Centers
+app.use('/api/cost-centers', costCentersRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 // WhatsApp

@@ -5,7 +5,7 @@ import {
   Megaphone, BarChart3, Settings, Boxes,
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
-  ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check, Coins,
+  ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check, Coins, FolderKanban,
 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -565,6 +565,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
             { to: '/reports',        icon: BarChart3,     label: 'Reportes' },
             { to: '/tickets',        icon: TicketIcon,    label: 'Soporte' },
             { to: '/commissions',    icon: Coins,         label: 'Comisiones' },
+            { to: '/cost-centers',  icon: FolderKanban,  label: 'Centro de Costos' },
             { to: '/users',          icon: Users2,        label: 'Usuarios' },
           ]}
         />

@@ -627,6 +627,39 @@ export function createSchema() {
     );
   `);
 
+  // ── Centro de costos ──────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cost_centers (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      client TEXT,
+      status TEXT NOT NULL DEFAULT 'activo',
+      start_date TEXT,
+      end_date TEXT,
+      budget REAL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS cost_entries (
+      id TEXT PRIMARY KEY,
+      cost_center_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('ingreso','gasto')),
+      category TEXT NOT NULL DEFAULT 'General',
+      description TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      date TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (cost_center_id) REFERENCES cost_centers(id) ON DELETE CASCADE,
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+  `);
+
   // ── Conversaciones WhatsApp ────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS whatsapp_conversations (
