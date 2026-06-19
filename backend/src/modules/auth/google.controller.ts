@@ -39,25 +39,28 @@ export function googleAuth(req: Request, res: Response) {
   res.redirect(buildGoogleAuthUrl('login'));
 }
 
-// ── 1b. Connect Gmail to existing account ────────────────────────────────────
-// The frontend passes the JWT as ?token= because browser redirects can't set headers
+// ── 1b. Get Gmail connect URL (called via API with auth header) ───────────────
+
+export function googleConnectUrl(req: AuthenticatedRequest, res: Response) {
+  if (!GOOGLE_CLIENT_ID) {
+    return res.json({ success: false, error: 'Google no configurado' });
+  }
+  const state = `connect:${req.user!.userId}`;
+  const url = buildGoogleAuthUrl(state);
+  res.json({ success: true, url });
+}
+
+// ── 1c. Connect redirect (no auth needed — state carries userId) ──────────────
 
 export function googleConnect(req: Request, res: Response) {
   if (!GOOGLE_CLIENT_ID) {
-    return res.redirect(`${FRONTEND_URL}/settings?error=google_not_configured`);
+    return res.redirect(`${FRONTEND_URL}/settings?tab=integraciones&error=google_not_configured`);
   }
-  // Verify the token passed as query param
-  const token = req.query.token as string;
-  if (!token) {
-    return res.redirect(`${FRONTEND_URL}/settings?error=auth_required`);
+  const state = req.query.state as string;
+  if (!state?.startsWith('connect:')) {
+    return res.redirect(`${FRONTEND_URL}/settings?tab=integraciones&error=invalid_state`);
   }
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
-    const state = `connect:${payload.userId}`;
-    res.redirect(buildGoogleAuthUrl(state));
-  } catch {
-    return res.redirect(`${FRONTEND_URL}/settings?error=auth_required`);
-  }
+  res.redirect(buildGoogleAuthUrl(state));
 }
 
 // ── 2. Handle Google callback ─────────────────────────────────────────────────
@@ -114,6 +117,8 @@ export async function googleCallback(req: Request, res: Response) {
 
     // ── Connect Gmail flow (user already logged in) ───────────────────────────
     if (isConnect && connectUserId) {
+      // Clear any duplicate google_id from other users first
+      dbRun(`UPDATE users SET google_id = NULL, google_refresh_token = NULL WHERE google_id = ? AND id != ?`, [gUser.id, connectUserId]);
       dbRun(
         `UPDATE users
            SET google_id = ?,
@@ -171,7 +176,8 @@ export async function googleCallback(req: Request, res: Response) {
       return res.redirect(`${FRONTEND_URL}/login?error=account_inactive`);
     }
 
-    // Link / update Google data
+    // Link / update Google data — clear duplicate google_id from other users first
+    dbRun(`UPDATE users SET google_id = NULL, google_refresh_token = NULL WHERE google_id = ? AND id != ?`, [gUser.id, user.id]);
     dbRun(
       `UPDATE users
          SET google_id = ?,

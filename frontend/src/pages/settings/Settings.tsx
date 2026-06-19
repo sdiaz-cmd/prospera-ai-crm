@@ -387,8 +387,6 @@ function WhatsAppPanel() {
 
 function GmailConfig() {
   const qc = useQueryClient();
-  const { accessToken } = useAuthStore();
-
   const { data, isLoading } = useQuery({
     queryKey: ['google-status'],
     queryFn: () => api.get('/auth/google/status').then(r => r.data.data as {
@@ -407,9 +405,17 @@ function GmailConfig() {
     onError: () => toast.error('Error al desvincular Google'),
   });
 
-  const handleConnect = () => {
-    const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '');
-    window.location.href = `${base}/api/auth/google/connect?token=${accessToken}`;
+  const handleConnect = async () => {
+    try {
+      const res = await api.get('/auth/google/connect-url');
+      if (res.data.success) {
+        window.location.href = res.data.url;
+      } else {
+        toast.error('No se pudo iniciar la conexión con Google');
+      }
+    } catch {
+      toast.error('Error al conectar con Google');
+    }
   };
 
   return (
