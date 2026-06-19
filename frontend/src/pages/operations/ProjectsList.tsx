@@ -59,17 +59,17 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
     });
   };
 
-  const inputCls = 'w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500/60';
+  const inputCls = 'w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500';
   const labelCls = 'text-xs text-gray-500 font-medium';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[#0f1623] border border-white/[0.1] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-[#0f1623] flex items-center justify-between p-5 border-b border-white/[0.07] z-10">
-          <h2 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
+      <div className="bg-white border border-gray-300 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="sticky top-0 bg-white flex items-center justify-between p-5 border-b border-gray-200 z-10">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-blue-400" /> Nuevo Proyecto
           </h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-gray-300 transition-colors"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors"><X className="w-5 h-5" /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -120,7 +120,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
             </div>
           </div>
 
-          <div className="border-t border-white/[0.07] pt-4">
+          <div className="border-t border-gray-200 pt-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Cliente</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -142,7 +142,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
             </div>
           </div>
 
-          <div className="border-t border-white/[0.07] pt-4">
+          <div className="border-t border-gray-200 pt-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Fechas & Finanzas</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -170,7 +170,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors">Cancelar</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">Cancelar</button>
             <button type="submit" disabled={mut.isPending} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-colors">
               {mut.isPending ? 'Creando...' : 'Crear proyecto'}
             </button>
@@ -190,24 +190,24 @@ function ProjectRow({ p }: { p: Project }) {
   return (
     <Link
       to={`/operations/projects/${p.id}`}
-      className="group flex items-center gap-4 px-5 py-4 border-b border-white/[0.05] hover:bg-white/[0.03] transition-colors"
+      className="group flex items-center gap-4 px-5 py-4 border-b border-gray-100 hover:bg-white transition-colors"
     >
       {/* Code + name */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono text-blue-400 flex-shrink-0">{p.code}</span>
           {isDelayed && <AlertTriangle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
-          <span className="text-sm text-gray-200 font-medium truncate group-hover:text-white transition-colors">{p.name}</span>
+          <span className="text-sm text-gray-800 font-medium truncate group-hover:text-gray-900 transition-colors">{p.name}</span>
         </div>
         <div className="flex items-center gap-3 mt-1">
           {p.clientName && (
-            <span className="text-xs text-gray-600 flex items-center gap-1">
+            <span className="text-xs text-gray-400 flex items-center gap-1">
               <User className="w-3 h-3" /> {p.clientName}
             </span>
           )}
           {p.city && <span className="text-xs text-gray-700">{p.city}</span>}
           {p.installationDate && (
-            <span className="text-xs text-gray-600 flex items-center gap-1">
+            <span className="text-xs text-gray-400 flex items-center gap-1">
               <CalendarClock className="w-3 h-3" /> {new Date(p.installationDate).toLocaleDateString('es-CL')}
             </span>
           )}
@@ -215,29 +215,29 @@ function ProjectRow({ p }: { p: Project }) {
       </div>
 
       {/* Type */}
-      <span className="hidden md:block text-xs text-gray-600 w-28 flex-shrink-0 truncate">{TYPE_LABELS[p.type] || p.type}</span>
+      <span className="hidden md:block text-xs text-gray-400 w-28 flex-shrink-0 truncate">{TYPE_LABELS[p.type] || p.type}</span>
 
       {/* Checklist progress */}
       {checkPct !== null ? (
         <div className="hidden lg:flex items-center gap-2 w-24 flex-shrink-0">
-          <div className="flex-1 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${checkPct}%` }} />
           </div>
-          <span className="text-[10px] text-gray-600">{checkPct}%</span>
+          <span className="text-[10px] text-gray-400">{checkPct}%</span>
         </div>
       ) : <div className="hidden lg:block w-24" />}
 
       {/* Priority */}
-      <span className={cn('hidden sm:inline text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0', PRIORITY_COLORS[p.priority] || 'bg-gray-500/20 text-gray-400')}>
+      <span className={cn('hidden sm:inline text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0', PRIORITY_COLORS[p.priority] || 'bg-gray-500/20 text-gray-500')}>
         {PRIORITY_LABELS[p.priority] || p.priority}
       </span>
 
       {/* Status */}
-      <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-medium flex-shrink-0', STATUS_COLORS[p.status] || 'bg-gray-500/20 text-gray-400')}>
+      <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-medium flex-shrink-0', STATUS_COLORS[p.status] || 'bg-gray-500/20 text-gray-500')}>
         {STATUS_LABELS[p.status] || p.status}
       </span>
 
-      <ChevronRight className="w-4 h-4 text-gray-700 group-hover:text-gray-400 transition-colors flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-gray-700 group-hover:text-gray-500 transition-colors flex-shrink-0" />
     </Link>
   );
 }
@@ -277,10 +277,10 @@ export function ProjectsList() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-blue-400" /> Proyectos
           </h1>
-          <p className="text-xs text-gray-600 mt-0.5">{total} proyecto{total !== 1 ? 's' : ''} en total</p>
+          <p className="text-xs text-gray-400 mt-0.5">{total} proyecto{total !== 1 ? 's' : ''} en total</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -293,9 +293,9 @@ export function ProjectsList() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-3 py-2 text-sm text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50"
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-500"
             placeholder="Buscar por nombre, código, cliente..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -303,7 +303,7 @@ export function ProjectsList() {
         </div>
 
         <select
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-blue-500/50"
+          className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-500 focus:outline-none focus:border-blue-500"
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1); }}
         >
@@ -312,7 +312,7 @@ export function ProjectsList() {
         </select>
 
         <select
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-blue-500/50"
+          className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-500 focus:outline-none focus:border-blue-500"
           value={type}
           onChange={e => { setType(e.target.value); setPage(1); }}
         >
@@ -321,7 +321,7 @@ export function ProjectsList() {
         </select>
 
         <select
-          className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-gray-400 focus:outline-none focus:border-blue-500/50"
+          className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-500 focus:outline-none focus:border-blue-500"
           value={priority}
           onChange={e => { setPriority(e.target.value); setPage(1); }}
         >
@@ -335,7 +335,7 @@ export function ProjectsList() {
         {filtersActive && (
           <button
             onClick={() => { setSearch(''); setStatus(''); setType(''); setPriority(''); setPage(1); }}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs text-red-400 hover:text-red-300 border border-red-500/30 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs text-red-400 hover:text-red-700 border border-red-500/30 rounded-xl transition-colors"
           >
             <X className="w-3.5 h-3.5" /> Limpiar
           </button>
@@ -349,19 +349,19 @@ export function ProjectsList() {
       </div>
 
       {/* Table */}
-      <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl overflow-hidden">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden">
         {/* Column headers */}
-        <div className="flex items-center gap-4 px-5 py-2.5 bg-white/[0.02] border-b border-white/[0.05]">
-          <span className="flex-1 text-xs font-medium text-gray-600 uppercase tracking-wider">Proyecto</span>
-          <span className="hidden md:block text-xs font-medium text-gray-600 uppercase tracking-wider w-28">Tipo</span>
-          <span className="hidden lg:block text-xs font-medium text-gray-600 uppercase tracking-wider w-24">Checklist</span>
-          <span className="hidden sm:block text-xs font-medium text-gray-600 uppercase tracking-wider w-16">Prior.</span>
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wider w-36">Estado</span>
+        <div className="flex items-center gap-4 px-5 py-2.5 bg-gray-50 border-b border-gray-100">
+          <span className="flex-1 text-xs font-medium text-gray-400 uppercase tracking-wider">Proyecto</span>
+          <span className="hidden md:block text-xs font-medium text-gray-400 uppercase tracking-wider w-28">Tipo</span>
+          <span className="hidden lg:block text-xs font-medium text-gray-400 uppercase tracking-wider w-24">Checklist</span>
+          <span className="hidden sm:block text-xs font-medium text-gray-400 uppercase tracking-wider w-16">Prior.</span>
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider w-36">Estado</span>
           <span className="w-4" />
         </div>
 
         {isLoading ? (
-          <div className="py-12 text-center text-gray-600 text-sm">Cargando proyectos...</div>
+          <div className="py-12 text-center text-gray-400 text-sm">Cargando proyectos...</div>
         ) : projects.length === 0 ? (
           <div className="py-16 text-center">
             <ClipboardList className="w-10 h-10 text-gray-700 mx-auto mb-3" />
@@ -381,13 +381,13 @@ export function ProjectsList() {
           <button
             disabled={page <= 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 border border-white/[0.08] rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-800 disabled:opacity-30 border border-gray-200 rounded-lg transition-colors"
           >← Anterior</button>
-          <span className="text-xs text-gray-600 px-2">Pág {page} de {pages}</span>
+          <span className="text-xs text-gray-400 px-2">Pág {page} de {pages}</span>
           <button
             disabled={page >= pages}
             onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-30 border border-white/[0.08] rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-800 disabled:opacity-30 border border-gray-200 rounded-lg transition-colors"
           >Siguiente →</button>
         </div>
       )}

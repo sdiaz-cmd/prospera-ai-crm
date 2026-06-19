@@ -58,28 +58,28 @@ export function OperationsCalendar() {
     <div className="p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
+        <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-violet-400" /> Calendario de Operaciones
         </h1>
         <div className="flex items-center gap-2">
-          <button onClick={prev} className="p-1.5 text-gray-500 hover:text-gray-200 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
-          <span className="text-base font-semibold text-gray-200 w-44 text-center">{MONTHS_ES[month]} {year}</span>
-          <button onClick={next} className="p-1.5 text-gray-500 hover:text-gray-200 transition-colors"><ChevronRight className="w-5 h-5" /></button>
+          <button onClick={prev} className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
+          <span className="text-base font-semibold text-gray-800 w-44 text-center">{MONTHS_ES[month]} {year}</span>
+          <button onClick={next} className="p-1.5 text-gray-500 hover:text-gray-800 transition-colors"><ChevronRight className="w-5 h-5" /></button>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-600">
+      <div className="flex items-center gap-4 text-xs text-gray-400">
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" /> Instalación programada</span>
         <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block" /> Fecha compromiso</span>
       </div>
 
       {/* Calendar grid */}
-      <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl overflow-hidden">
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-white/[0.07]">
+        <div className="grid grid-cols-7 border-b border-gray-200">
           {DAYS_ES.map(d => (
-            <div key={d} className="py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <div key={d} className="py-2.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
               {d}
             </div>
           ))}
@@ -87,7 +87,7 @@ export function OperationsCalendar() {
 
         {/* Weeks */}
         {Array.from({ length: cells.length / 7 }, (_, wi) => (
-          <div key={wi} className="grid grid-cols-7 border-b border-white/[0.05] last:border-0">
+          <div key={wi} className="grid grid-cols-7 border-b border-gray-100 last:border-0">
             {cells.slice(wi * 7, wi * 7 + 7).map((day, di) => {
               const dateStr = day ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : '';
               const isToday = dateStr === todayStr;
@@ -97,7 +97,7 @@ export function OperationsCalendar() {
                 <div
                   key={di}
                   className={cn(
-                    'min-h-[90px] p-2 border-r border-white/[0.05] last:border-0',
+                    'min-h-[90px] p-2 border-r border-gray-100 last:border-0',
                     !day && 'bg-white/[0.01]',
                     isToday && 'bg-blue-500/[0.05]'
                   )}
@@ -119,7 +119,7 @@ export function OperationsCalendar() {
                               to={`/operations/projects/${p.id}`}
                               className={cn(
                                 'block px-1.5 py-0.5 rounded text-[10px] truncate transition-opacity hover:opacity-80',
-                                isInstall ? 'bg-blue-500/30 text-blue-300' : 'bg-orange-500/20 text-orange-300'
+                                isInstall ? 'bg-blue-500/30 text-blue-700' : 'bg-orange-500/20 text-orange-700'
                               )}
                               title={p.name}
                             >
@@ -128,7 +128,7 @@ export function OperationsCalendar() {
                           );
                         })}
                         {dayProjects.length > 3 && (
-                          <span className="text-[10px] text-gray-600 px-1">+{dayProjects.length - 3} más</span>
+                          <span className="text-[10px] text-gray-400 px-1">+{dayProjects.length - 3} más</span>
                         )}
                       </div>
                     </>
@@ -141,14 +141,14 @@ export function OperationsCalendar() {
       </div>
 
       {/* Side list of this month's events */}
-      <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5">
-        <h2 className="text-sm font-semibold text-gray-400 mb-4">Eventos de {MONTHS_ES[month]}</h2>
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+        <h2 className="text-sm font-semibold text-gray-500 mb-4">Eventos de {MONTHS_ES[month]}</h2>
         {(() => {
           const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
           const monthEvents = Object.entries(byDate)
             .filter(([k]) => k.startsWith(monthStr))
             .sort(([a], [b]) => a.localeCompare(b));
-          if (monthEvents.length === 0) return <p className="text-gray-600 text-sm">Sin eventos este mes</p>;
+          if (monthEvents.length === 0) return <p className="text-gray-400 text-sm">Sin eventos este mes</p>;
           return (
             <div className="space-y-2">
               {monthEvents.map(([date, projs]) => (
@@ -159,10 +159,10 @@ export function OperationsCalendar() {
                   <div className="flex-1 space-y-1">
                     {projs.map(p => (
                       <Link key={p.id} to={`/operations/projects/${p.id}`} className="flex items-center gap-2 hover:text-blue-400 transition-colors">
-                        <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[p.status] || 'bg-gray-500/20 text-gray-400')}>
+                        <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[p.status] || 'bg-gray-500/20 text-gray-500')}>
                           {STATUS_LABELS[p.status] || p.status}
                         </span>
-                        <span className="text-sm text-gray-400 hover:text-blue-300">{p.code}: {p.name}</span>
+                        <span className="text-sm text-gray-500 hover:text-blue-700">{p.code}: {p.name}</span>
                       </Link>
                     ))}
                   </div>

@@ -27,7 +27,7 @@ const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: 
   { id: 'logs',      label: 'Bitácora',   icon: MessageSquare },
 ];
 
-const inputCls = 'w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500/60';
+const inputCls = 'w-full bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500';
 
 // ─── Status Changer ───────────────────────────────────────────────────────────
 
@@ -44,13 +44,13 @@ function StatusChanger({ project }: { project: Project }) {
     <div className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className={cn('flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors', STATUS_COLORS[project.status] || 'bg-gray-500/20 text-gray-400')}
+        className={cn('flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium transition-colors', STATUS_COLORS[project.status] || 'bg-gray-500/20 text-gray-500')}
       >
         {STATUS_LABELS[project.status] || project.status}
         <ChevronDown className="w-3.5 h-3.5" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-[#111827] border border-white/10 rounded-xl shadow-2xl w-56 max-h-72 overflow-y-auto py-1">
+        <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl w-56 max-h-72 overflow-y-auto py-1">
           {PROJECT_STATUSES.map(s => (
             <button
               key={s}
@@ -58,10 +58,10 @@ function StatusChanger({ project }: { project: Project }) {
               disabled={s === project.status || mut.isPending}
               className={cn(
                 'w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors',
-                s === project.status ? 'opacity-40 cursor-default' : 'hover:bg-white/[0.05]'
+                s === project.status ? 'opacity-40 cursor-default' : 'hover:bg-gray-100'
               )}
             >
-              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[s] || 'bg-gray-500/20 text-gray-400')}>
+              <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[s] || 'bg-gray-500/20 text-gray-500')}>
                 {STATUS_LABELS[s]}
               </span>
             </button>
@@ -103,7 +103,7 @@ function GeneralTab({ project }: { project: Project }) {
     return (
       <div className="space-y-5">
         <div className="flex justify-end">
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+          <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-700 transition-colors">
             <Edit2 className="w-3.5 h-3.5" /> Editar
           </button>
         </div>
@@ -120,9 +120,9 @@ function GeneralTab({ project }: { project: Project }) {
             { label: 'Fecha compromiso', value: project.commitmentDate ? new Date(project.commitmentDate).toLocaleDateString('es-CL') : null },
             { label: 'Fecha instalación', value: project.installationDate ? new Date(project.installationDate).toLocaleDateString('es-CL') : null },
           ].filter(f => f.value).map(({ label, value }) => (
-            <div key={label} className="bg-white/[0.03] rounded-xl p-3">
-              <p className="text-xs text-gray-600 mb-1">{label}</p>
-              <p className="text-sm text-gray-200">{value}</p>
+            <div key={label} className="bg-white rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-1">{label}</p>
+              <p className="text-sm text-gray-800">{value}</p>
             </div>
           ))}
         </div>
@@ -131,40 +131,40 @@ function GeneralTab({ project }: { project: Project }) {
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
               <p className="text-xs text-emerald-400 mb-1">Venta</p>
-              <p className="text-lg font-bold text-emerald-300">{project.saleAmount.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
+              <p className="text-lg font-bold text-emerald-700">{project.saleAmount.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
             </div>
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
               <p className="text-xs text-blue-400 mb-1">Costo estimado</p>
-              <p className="text-lg font-bold text-blue-300">{project.estimatedCost.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
+              <p className="text-lg font-bold text-blue-700">{project.estimatedCost.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
             </div>
             <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4">
               <p className="text-xs text-orange-400 mb-1">Costo real</p>
-              <p className="text-lg font-bold text-orange-300">{project.actualCost.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
+              <p className="text-lg font-bold text-orange-700">{project.actualCost.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}</p>
             </div>
           </div>
         )}
 
         {project.description && (
-          <div className="bg-white/[0.03] rounded-xl p-4">
-            <p className="text-xs text-gray-600 mb-2">Descripción</p>
-            <p className="text-sm text-gray-300 whitespace-pre-wrap">{project.description}</p>
+          <div className="bg-white rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-2">Descripción</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{project.description}</p>
           </div>
         )}
 
         {project.technicalNotes && (
-          <div className="bg-white/[0.03] rounded-xl p-4">
-            <p className="text-xs text-gray-600 mb-2">Notas técnicas</p>
-            <p className="text-sm text-gray-300 whitespace-pre-wrap">{project.technicalNotes}</p>
+          <div className="bg-white rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-2">Notas técnicas</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{project.technicalNotes}</p>
           </div>
         )}
 
         {project.chiefName || project.sellerName || project.leadTechName ? (
-          <div className="bg-white/[0.03] rounded-xl p-4">
-            <p className="text-xs text-gray-600 mb-3">Equipo asignado</p>
+          <div className="bg-white rounded-xl p-4">
+            <p className="text-xs text-gray-400 mb-3">Equipo asignado</p>
             <div className="flex gap-4 flex-wrap">
-              {project.sellerName && <div><p className="text-xs text-gray-600">Vendedor</p><p className="text-sm text-gray-300">{project.sellerName}</p></div>}
-              {project.chiefName && <div><p className="text-xs text-gray-600">Jefe técnico</p><p className="text-sm text-gray-300">{project.chiefName}</p></div>}
-              {project.leadTechName && <div><p className="text-xs text-gray-600">Técnico líder</p><p className="text-sm text-gray-300">{project.leadTechName}</p></div>}
+              {project.sellerName && <div><p className="text-xs text-gray-400">Vendedor</p><p className="text-sm text-gray-700">{project.sellerName}</p></div>}
+              {project.chiefName && <div><p className="text-xs text-gray-400">Jefe técnico</p><p className="text-sm text-gray-700">{project.chiefName}</p></div>}
+              {project.leadTechName && <div><p className="text-xs text-gray-400">Técnico líder</p><p className="text-sm text-gray-700">{project.leadTechName}</p></div>}
             </div>
           </div>
         ) : null}
@@ -175,27 +175,27 @@ function GeneralTab({ project }: { project: Project }) {
   return (
     <form onSubmit={e => { e.preventDefault(); mut.mutate({ ...form, saleAmount: Number(form.saleAmount), estimatedCost: Number(form.estimatedCost), actualCost: Number(form.actualCost) }); }} className="space-y-4">
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-300">Cancelar</button>
+        <button type="button" onClick={() => setEditing(false)} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700">Cancelar</button>
         <button type="submit" disabled={mut.isPending} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs transition-colors">
           <Save className="w-3.5 h-3.5" /> {mut.isPending ? 'Guardando...' : 'Guardar'}
         </button>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="col-span-2"><label className="text-xs text-gray-600">Nombre</label><input className={inputCls} value={form.name} onChange={f('name')} /></div>
-        <div><label className="text-xs text-gray-600">Cliente</label><input className={inputCls} value={form.clientName} onChange={f('clientName')} /></div>
-        <div><label className="text-xs text-gray-600">Teléfono</label><input className={inputCls} value={form.clientPhone} onChange={f('clientPhone')} /></div>
-        <div><label className="text-xs text-gray-600">Email</label><input className={inputCls} value={form.clientEmail} onChange={f('clientEmail')} /></div>
-        <div><label className="text-xs text-gray-600">Ciudad</label><input className={inputCls} value={form.city} onChange={f('city')} /></div>
-        <div><label className="text-xs text-gray-600">Dirección</label><input className={inputCls} value={form.address} onChange={f('address')} /></div>
-        <div><label className="text-xs text-gray-600">Región</label><input className={inputCls} value={form.region} onChange={f('region')} /></div>
-        <div><label className="text-xs text-gray-600">Fecha compromiso</label><input type="date" className={inputCls} value={form.commitmentDate} onChange={f('commitmentDate')} /></div>
-        <div><label className="text-xs text-gray-600">Fecha instalación</label><input type="date" className={inputCls} value={form.installationDate} onChange={f('installationDate')} /></div>
-        <div><label className="text-xs text-gray-600">Monto venta</label><input type="number" className={inputCls} value={form.saleAmount} onChange={f('saleAmount')} /></div>
-        <div><label className="text-xs text-gray-600">Costo estimado</label><input type="number" className={inputCls} value={form.estimatedCost} onChange={f('estimatedCost')} /></div>
-        <div><label className="text-xs text-gray-600">Costo real</label><input type="number" className={inputCls} value={form.actualCost} onChange={f('actualCost')} /></div>
-        <div className="col-span-2"><label className="text-xs text-gray-600">Descripción</label><textarea className={cn(inputCls, 'h-20 resize-none')} value={form.description} onChange={f('description')} /></div>
-        <div className="col-span-2"><label className="text-xs text-gray-600">Notas técnicas</label><textarea className={cn(inputCls, 'h-16 resize-none')} value={form.technicalNotes} onChange={f('technicalNotes')} /></div>
-        <div className="col-span-2"><label className="text-xs text-gray-600">Notas comerciales</label><textarea className={cn(inputCls, 'h-16 resize-none')} value={form.commercialNotes} onChange={f('commercialNotes')} /></div>
+        <div className="col-span-2"><label className="text-xs text-gray-400">Nombre</label><input className={inputCls} value={form.name} onChange={f('name')} /></div>
+        <div><label className="text-xs text-gray-400">Cliente</label><input className={inputCls} value={form.clientName} onChange={f('clientName')} /></div>
+        <div><label className="text-xs text-gray-400">Teléfono</label><input className={inputCls} value={form.clientPhone} onChange={f('clientPhone')} /></div>
+        <div><label className="text-xs text-gray-400">Email</label><input className={inputCls} value={form.clientEmail} onChange={f('clientEmail')} /></div>
+        <div><label className="text-xs text-gray-400">Ciudad</label><input className={inputCls} value={form.city} onChange={f('city')} /></div>
+        <div><label className="text-xs text-gray-400">Dirección</label><input className={inputCls} value={form.address} onChange={f('address')} /></div>
+        <div><label className="text-xs text-gray-400">Región</label><input className={inputCls} value={form.region} onChange={f('region')} /></div>
+        <div><label className="text-xs text-gray-400">Fecha compromiso</label><input type="date" className={inputCls} value={form.commitmentDate} onChange={f('commitmentDate')} /></div>
+        <div><label className="text-xs text-gray-400">Fecha instalación</label><input type="date" className={inputCls} value={form.installationDate} onChange={f('installationDate')} /></div>
+        <div><label className="text-xs text-gray-400">Monto venta</label><input type="number" className={inputCls} value={form.saleAmount} onChange={f('saleAmount')} /></div>
+        <div><label className="text-xs text-gray-400">Costo estimado</label><input type="number" className={inputCls} value={form.estimatedCost} onChange={f('estimatedCost')} /></div>
+        <div><label className="text-xs text-gray-400">Costo real</label><input type="number" className={inputCls} value={form.actualCost} onChange={f('actualCost')} /></div>
+        <div className="col-span-2"><label className="text-xs text-gray-400">Descripción</label><textarea className={cn(inputCls, 'h-20 resize-none')} value={form.description} onChange={f('description')} /></div>
+        <div className="col-span-2"><label className="text-xs text-gray-400">Notas técnicas</label><textarea className={cn(inputCls, 'h-16 resize-none')} value={form.technicalNotes} onChange={f('technicalNotes')} /></div>
+        <div className="col-span-2"><label className="text-xs text-gray-400">Notas comerciales</label><textarea className={cn(inputCls, 'h-16 resize-none')} value={form.commercialNotes} onChange={f('commercialNotes')} /></div>
       </div>
     </form>
   );
@@ -241,11 +241,11 @@ function TasksTab({ projectId }: { projectId: string }) {
       </form>
 
       {tasks.length === 0 ? (
-        <p className="text-gray-600 text-sm text-center py-8">No hay tareas. Agrega la primera arriba.</p>
+        <p className="text-gray-400 text-sm text-center py-8">No hay tareas. Agrega la primera arriba.</p>
       ) : (
         <div className="space-y-1">
           {tasks.map(t => (
-            <div key={t.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] group">
+            <div key={t.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100 group">
               <button
                 onClick={() => update.mutate({ id: t.id, data: { status: statusCycleMap[t.status] || 'pendiente' } })}
                 className={cn('w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors',
@@ -254,7 +254,7 @@ function TasksTab({ projectId }: { projectId: string }) {
               >
                 {t.status === 'completada' && <Check className="w-3 h-3 text-white" />}
               </button>
-              <span className={cn('flex-1 text-sm', t.status === 'completada' ? 'line-through text-gray-600' : 'text-gray-300')}>
+              <span className={cn('flex-1 text-sm', t.status === 'completada' ? 'line-through text-gray-400' : 'text-gray-700')}>
                 {t.title}
               </span>
               <span className={cn('text-xs flex-shrink-0', statusColor[t.status] || 'text-gray-500')}>
@@ -306,19 +306,19 @@ function ChecklistTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       {/* Progress */}
       {items.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-white/[0.03] rounded-xl">
-          <div className="flex-1 h-2 bg-white/[0.05] rounded-full overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl">
+          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
           </div>
-          <span className="text-sm font-medium text-gray-300">{done}/{items.length}</span>
-          <span className="text-xs text-gray-600">{pct}% completado</span>
+          <span className="text-sm font-medium text-gray-700">{done}/{items.length}</span>
+          <span className="text-xs text-gray-400">{pct}% completado</span>
         </div>
       )}
 
       {/* Add form */}
       <form onSubmit={e => { e.preventDefault(); if (item.trim()) add.mutate({ item: item.trim(), category }); }} className="flex gap-2">
         <input
-          className="flex-shrink-0 bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-gray-300 w-32 focus:outline-none focus:border-blue-500/60"
+          className="flex-shrink-0 bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 w-32 focus:outline-none focus:border-blue-500"
           placeholder="Categoría"
           value={category}
           onChange={e => setCategory(e.target.value)}
@@ -332,9 +332,9 @@ function ChecklistTab({ projectId }: { projectId: string }) {
       {/* Groups */}
       {Object.entries(grouped).map(([cat, catItems]) => (
         <div key={cat} className="space-y-1">
-          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider px-1">{cat}</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">{cat}</p>
           {catItems.map(ci => (
-            <div key={ci.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05] group">
+            <div key={ci.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100 group">
               <button
                 onClick={() => toggle.mutate(ci.id)}
                 className={cn('w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors',
@@ -343,7 +343,7 @@ function ChecklistTab({ projectId }: { projectId: string }) {
               >
                 {ci.isCompleted && <Check className="w-3 h-3 text-white" />}
               </button>
-              <span className={cn('flex-1 text-sm', ci.isCompleted ? 'line-through text-gray-600' : 'text-gray-300')}>
+              <span className={cn('flex-1 text-sm', ci.isCompleted ? 'line-through text-gray-400' : 'text-gray-700')}>
                 {ci.item}
               </span>
               {ci.isRequired && <span className="text-[10px] text-orange-400 flex-shrink-0">Requerido</span>}
@@ -355,7 +355,7 @@ function ChecklistTab({ projectId }: { projectId: string }) {
         </div>
       ))}
 
-      {items.length === 0 && <p className="text-gray-600 text-sm text-center py-8">Sin ítems en el checklist</p>}
+      {items.length === 0 && <p className="text-gray-400 text-sm text-center py-8">Sin ítems en el checklist</p>}
     </div>
   );
 }
@@ -385,35 +385,35 @@ function DocumentsTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{docs.length} documento{docs.length !== 1 ? 's' : ''}</span>
-        <button onClick={() => setShowForm(s => !s)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+        <button onClick={() => setShowForm(s => !s)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-700 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Agregar documento
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 space-y-3">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-600">Tipo</label>
+              <label className="text-xs text-gray-400">Tipo</label>
               <select className={inputCls} value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
                 {DOC_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-600">Nombre</label>
+              <label className="text-xs text-gray-400">Nombre</label>
               <input className={inputCls} placeholder="Nombre del documento" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-600">URL del archivo (opcional)</label>
+            <label className="text-xs text-gray-400">URL del archivo (opcional)</label>
             <input className={inputCls} placeholder="https://..." value={form.fileUrl} onChange={e => setForm(f => ({ ...f, fileUrl: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs text-gray-600">Notas</label>
+            <label className="text-xs text-gray-400">Notas</label>
             <input className={inputCls} placeholder="Descripción..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5">Cancelar</button>
+            <button onClick={() => setShowForm(false)} className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancelar</button>
             <button onClick={() => { if (form.name.trim()) add.mutate(form); }} disabled={!form.name.trim() || add.isPending} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs transition-colors">
               Guardar
             </button>
@@ -422,21 +422,21 @@ function DocumentsTab({ projectId }: { projectId: string }) {
       )}
 
       {docs.length === 0 ? (
-        <p className="text-gray-600 text-sm text-center py-8">Sin documentos agregados</p>
+        <p className="text-gray-400 text-sm text-center py-8">Sin documentos agregados</p>
       ) : (
         <div className="space-y-2">
           {docs.map(d => (
-            <div key={d.id} className="flex items-center gap-3 px-4 py-3 bg-white/[0.02] border border-white/[0.05] rounded-xl group">
+            <div key={d.id} className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl group">
               <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">{d.type}</span>
-                  <span className="text-sm text-gray-300 truncate">{d.name}</span>
+                  <span className="text-[10px] bg-blue-500/20 text-blue-700 px-2 py-0.5 rounded-full">{d.type}</span>
+                  <span className="text-sm text-gray-700 truncate">{d.name}</span>
                 </div>
-                {d.notes && <p className="text-xs text-gray-600 mt-0.5 truncate">{d.notes}</p>}
+                {d.notes && <p className="text-xs text-gray-400 mt-0.5 truncate">{d.notes}</p>}
               </div>
               {d.fileUrl && (
-                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex-shrink-0">
+                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-700 flex-shrink-0">
                   Ver <ChevronRight className="w-3 h-3 inline" />
                 </a>
               )}
@@ -474,22 +474,22 @@ function EquipmentTab({ projectId }: { projectId: string }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <span className="text-sm text-gray-500">{equipment.length} equipo{equipment.length !== 1 ? 's' : ''} instalado{equipment.length !== 1 ? 's' : ''}</span>
-        <button onClick={() => setShowForm(s => !s)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+        <button onClick={() => setShowForm(s => !s)} className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-700 transition-colors">
           <Plus className="w-3.5 h-3.5" /> Registrar equipo
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 space-y-3">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="text-xs text-gray-600">Marca</label><input className={inputCls} value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} /></div>
-            <div><label className="text-xs text-gray-600">Modelo</label><input className={inputCls} value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} /></div>
-            <div><label className="text-xs text-gray-600">SKU</label><input className={inputCls} value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} /></div>
-            <div><label className="text-xs text-gray-600">Número de serie</label><input className={inputCls} value={form.serialNumber} onChange={e => setForm(f => ({ ...f, serialNumber: e.target.value }))} /></div>
-            <div><label className="text-xs text-gray-600">Ubicación</label><input className={inputCls} value={form.locationDetail} onChange={e => setForm(f => ({ ...f, locationDetail: e.target.value }))} /></div>
-            <div><label className="text-xs text-gray-600">Vence garantía</label><input type="date" className={inputCls} value={form.warrantyEnd} onChange={e => setForm(f => ({ ...f, warrantyEnd: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">Marca</label><input className={inputCls} value={form.brand} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">Modelo</label><input className={inputCls} value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">SKU</label><input className={inputCls} value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">Número de serie</label><input className={inputCls} value={form.serialNumber} onChange={e => setForm(f => ({ ...f, serialNumber: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">Ubicación</label><input className={inputCls} value={form.locationDetail} onChange={e => setForm(f => ({ ...f, locationDetail: e.target.value }))} /></div>
+            <div><label className="text-xs text-gray-400">Vence garantía</label><input type="date" className={inputCls} value={form.warrantyEnd} onChange={e => setForm(f => ({ ...f, warrantyEnd: e.target.value }))} /></div>
           </div>
-          <div><label className="text-xs text-gray-600">Notas</label><input className={inputCls} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
+          <div><label className="text-xs text-gray-400">Notas</label><input className={inputCls} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} /></div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setShowForm(false)} className="text-xs text-gray-500 px-3 py-1.5">Cancelar</button>
             <button onClick={() => add.mutate(form)} disabled={add.isPending} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs transition-colors">Guardar</button>
@@ -498,18 +498,18 @@ function EquipmentTab({ projectId }: { projectId: string }) {
       )}
 
       {equipment.length === 0 ? (
-        <p className="text-gray-600 text-sm text-center py-8">Sin equipos registrados</p>
+        <p className="text-gray-400 text-sm text-center py-8">Sin equipos registrados</p>
       ) : (
         <div className="space-y-2">
           {equipment.map(eq => (
-            <div key={eq.id} className="flex items-start gap-3 px-4 py-3 bg-white/[0.02] border border-white/[0.05] rounded-xl group">
+            <div key={eq.id} className="flex items-start gap-3 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl group">
               <Package className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-300 font-medium">{[eq.brand, eq.model].filter(Boolean).join(' ') || 'Equipo sin nombre'}</p>
+                <p className="text-sm text-gray-700 font-medium">{[eq.brand, eq.model].filter(Boolean).join(' ') || 'Equipo sin nombre'}</p>
                 <div className="flex flex-wrap gap-3 mt-1">
-                  {eq.sku && <span className="text-xs text-gray-600">SKU: {eq.sku}</span>}
-                  {eq.serialNumber && <span className="text-xs text-gray-600">S/N: {eq.serialNumber}</span>}
-                  {eq.locationDetail && <span className="text-xs text-gray-600">📍 {eq.locationDetail}</span>}
+                  {eq.sku && <span className="text-xs text-gray-400">SKU: {eq.sku}</span>}
+                  {eq.serialNumber && <span className="text-xs text-gray-400">S/N: {eq.serialNumber}</span>}
+                  {eq.locationDetail && <span className="text-xs text-gray-400">📍 {eq.locationDetail}</span>}
                   {eq.warrantyEnd && <span className="text-xs text-amber-400">Garantía hasta: {new Date(eq.warrantyEnd).toLocaleDateString('es-CL')}</span>}
                 </div>
               </div>
@@ -545,7 +545,7 @@ function LogsTab({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 space-y-3">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
         <input className={inputCls} placeholder="Título de la nota..." value={title} onChange={e => setTitle(e.target.value)} />
         <textarea className={cn(inputCls, 'h-16 resize-none')} placeholder="Detalle (opcional)..." value={desc} onChange={e => setDesc(e.target.value)} />
         <div className="flex justify-end">
@@ -557,13 +557,13 @@ function LogsTab({ projectId }: { projectId: string }) {
 
       <div className="space-y-2">
         {[...logs].reverse().map(log => (
-          <div key={log.id} className="flex gap-3 px-4 py-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+          <div key={log.id} className="flex gap-3 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl">
             <span className="text-base flex-shrink-0 mt-0.5">{LOG_ICON[log.type] || '📝'}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-gray-200 font-medium">{log.title}</span>
+                <span className="text-sm text-gray-800 font-medium">{log.title}</span>
                 {log.oldValue && log.newValue && (
-                  <span className="text-xs text-gray-600">{STATUS_LABELS[log.oldValue] || log.oldValue} → {STATUS_LABELS[log.newValue] || log.newValue}</span>
+                  <span className="text-xs text-gray-400">{STATUS_LABELS[log.oldValue] || log.oldValue} → {STATUS_LABELS[log.newValue] || log.newValue}</span>
                 )}
               </div>
               {log.description && <p className="text-xs text-gray-500 mt-1">{log.description}</p>}
@@ -577,7 +577,7 @@ function LogsTab({ projectId }: { projectId: string }) {
             </div>
           </div>
         ))}
-        {logs.length === 0 && <p className="text-gray-600 text-sm text-center py-8">Sin entradas en la bitácora</p>}
+        {logs.length === 0 && <p className="text-gray-400 text-sm text-center py-8">Sin entradas en la bitácora</p>}
       </div>
     </div>
   );
@@ -611,10 +611,10 @@ export function ProjectDetail() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-white/[0.07] space-y-3">
+      <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-gray-200 space-y-3">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-          <Link to="/operations/projects" className="hover:text-gray-400 transition-colors flex items-center gap-1">
+        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <Link to="/operations/projects" className="hover:text-gray-500 transition-colors flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Proyectos
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -624,10 +624,10 @@ export function ProjectDetail() {
         {/* Title row */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-xl font-bold text-gray-100">{project.name}</h1>
+            <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="text-xs font-mono text-blue-400">{project.code}</span>
-              {project.clientName && <span className="text-xs text-gray-600">{project.clientName}</span>}
+              {project.clientName && <span className="text-xs text-gray-400">{project.clientName}</span>}
               {project.city && <span className="text-xs text-gray-700">{project.city}</span>}
               <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-medium', PRIORITY_COLORS[project.priority] || '')}>
                 {PRIORITY_LABELS[project.priority]}
@@ -648,11 +648,11 @@ export function ProjectDetail() {
 
         {/* Progress bars */}
         {(checkPct !== null || (project.taskCount ?? 0) > 0) && (
-          <div className="flex items-center gap-6 text-xs text-gray-600">
+          <div className="flex items-center gap-6 text-xs text-gray-400">
             {checkPct !== null && (
               <div className="flex items-center gap-2">
                 <span>Checklist {project.checklistDone}/{project.checklistTotal}</span>
-                <div className="w-24 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${checkPct}%` }} />
                 </div>
               </div>
@@ -665,7 +665,7 @@ export function ProjectDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="flex-shrink-0 px-6 flex gap-1 border-b border-white/[0.07]">
+      <div className="flex-shrink-0 px-6 flex gap-1 border-b border-gray-200">
         {TABS.map(({ id: tid, label, icon: Icon }) => (
           <button
             key={tid}
@@ -674,7 +674,7 @@ export function ProjectDetail() {
               'flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 transition-colors',
               tab === tid
                 ? 'text-blue-400 border-blue-500'
-                : 'text-gray-600 border-transparent hover:text-gray-400 hover:border-gray-700'
+                : 'text-gray-400 border-transparent hover:text-gray-500 hover:border-gray-700'
             )}
           >
             <Icon className="w-3.5 h-3.5" />
