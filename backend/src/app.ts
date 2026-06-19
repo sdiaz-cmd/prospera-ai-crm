@@ -14,6 +14,7 @@ import { securityHeaders } from './middleware/security.middleware';
 
 // Routes
 import authRoutes from './modules/auth/auth.routes';
+import googleAuthRoutes from './modules/auth/google.routes';
 import usersRoutes from './modules/users/users.routes';
 import rolesRoutes from './modules/roles/roles.routes';
 import companiesRoutes from './modules/companies/companies.routes';
@@ -178,6 +179,7 @@ app.get('/health', (_, res) => res.json({
 
 // ─── Rutas API ────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/google', googleAuthRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/company', companiesRoutes);

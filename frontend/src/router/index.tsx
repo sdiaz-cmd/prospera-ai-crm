@@ -6,6 +6,7 @@ import { Register } from '@/pages/auth/Register';
 import { ForgotPassword } from '@/pages/auth/ForgotPassword';
 import { ResetPassword } from '@/pages/auth/ResetPassword';
 import { AcceptInvitation } from '@/pages/auth/AcceptInvitation';
+import { GoogleCallback } from '@/pages/auth/GoogleCallback';
 import TrialExpired from '@/pages/TrialExpired';
 import { Dashboard } from '@/pages/dashboard/Dashboard';
 import { Users } from '@/pages/users/Users';
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: '/reset-password', element: <ResetPassword /> },
       { path: '/trial-expired', element: <TrialExpired /> },
       { path: '/invite/:token', element: <AcceptInvitation /> },
+      { path: '/auth/google/callback', element: <GoogleCallback /> },
     ],
   },
 

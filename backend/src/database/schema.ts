@@ -532,6 +532,11 @@ export function createSchema() {
   try { db.exec('ALTER TABLE companies ADD COLUMN apollo_api_key TEXT'); } catch { /* ya existe */ }
   try { db.exec('ALTER TABLE companies ADD COLUMN apollo_search_roles TEXT'); } catch { /* ya existe */ }
 
+  // ── Columnas Google OAuth (migración incremental) ──
+  try { db.exec('ALTER TABLE users ADD COLUMN google_id TEXT'); } catch { /* ya existe */ }
+  try { db.exec('ALTER TABLE users ADD COLUMN google_refresh_token TEXT'); } catch { /* ya existe */ }
+  try { db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL'); } catch { /* ya existe */ }
+
   // ── Tabla de invitaciones ────────────────────────────────────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_invitations (
