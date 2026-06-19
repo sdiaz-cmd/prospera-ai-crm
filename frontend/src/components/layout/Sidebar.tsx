@@ -6,6 +6,7 @@ import {
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
   ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check, Coins, FolderKanban,
+  Wrench, ClipboardList, CalendarDays, HardHat, Activity,
 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -526,6 +527,26 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
             { to: '/erp/suppliers',  icon: Truck,       label: 'Proveedores', feature: 'erp' },
             { to: '/erp/invoices',   icon: ReceiptText, label: 'Facturas',    feature: 'erp' },
             { to: '/erp/inventory',  icon: Boxes,       label: 'Inventario',  feature: 'erp' },
+          ]}
+        />
+
+        {/* Operaciones */}
+        {!collapsed && <div className="pt-3 pb-1 px-1">
+          <span className="text-[10px] font-bold tracking-[0.14em] text-gray-700 uppercase select-none">Operaciones</span>
+        </div>}
+        {collapsed && <div className="my-1.5 mx-3 h-px bg-white/[0.06]" />}
+
+        <CollapsibleSection
+          label="Operaciones"
+          icon={Wrench}
+          collapsed={collapsed}
+          features={features}
+          onLockedClick={handleLocked}
+          items={[
+            { to: '/operations/dashboard', icon: Activity,      label: 'Dashboard Ops' },
+            { to: '/operations/projects',  icon: ClipboardList, label: 'Proyectos' },
+            { to: '/operations/calendar',  icon: CalendarDays,  label: 'Calendario' },
+            { to: '/operations/teams',     icon: HardHat,       label: 'Cuadrillas' },
           ]}
         />
 

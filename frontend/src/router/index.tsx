@@ -33,6 +33,12 @@ import { Reports } from '@/pages/reports/Reports';
 import { TicketsPage } from '@/pages/tickets/TicketsPage';
 import { CommissionsPage } from '@/pages/commissions/CommissionsPage';
 import { CostCentersPage } from '@/pages/cost-centers/CostCentersPage';
+// Operations
+import { OperationsDashboard } from '@/pages/operations/OperationsDashboard';
+import { ProjectsList } from '@/pages/operations/ProjectsList';
+import { ProjectDetail } from '@/pages/operations/ProjectDetail';
+import { OperationsCalendar } from '@/pages/operations/OperationsCalendar';
+import { TeamsPage } from '@/pages/operations/TeamsPage';
 
 export const router = createBrowserRouter([
   // Rutas públicas
@@ -109,6 +115,19 @@ export const router = createBrowserRouter([
 
           // Centro de costos
           { path: '/cost-centers', element: <CostCentersPage /> },
+
+          // Operaciones
+          {
+            path: '/operations',
+            children: [
+              { index: true, element: <Navigate to="/operations/dashboard" replace /> },
+              { path: 'dashboard', element: <OperationsDashboard /> },
+              { path: 'projects',  element: <ProjectsList /> },
+              { path: 'projects/:id', element: <ProjectDetail /> },
+              { path: 'calendar', element: <OperationsCalendar /> },
+              { path: 'teams',    element: <TeamsPage /> },
+            ],
+          },
 
           // Perfil
           { path: '/profile', element: <ComingSoon title="Mi Perfil" description="Gestiona tu información personal, foto de perfil y preferencias." phase="Próximamente" /> },

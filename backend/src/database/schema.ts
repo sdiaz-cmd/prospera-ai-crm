@@ -692,6 +692,180 @@ export function createSchema() {
     );
   `);
 
+  // ── Módulo Operaciones ────────────────────────────────────────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      code TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+
+      -- Origin
+      origin TEXT NOT NULL DEFAULT 'manual',
+      origin_id TEXT,
+
+      -- Type & priority
+      type TEXT NOT NULL DEFAULT 'other',
+      priority TEXT NOT NULL DEFAULT 'media',
+      status TEXT NOT NULL DEFAULT 'creado',
+
+      -- Client (linked or free text)
+      account_id TEXT,
+      contact_id TEXT,
+      client_name TEXT,
+      client_email TEXT,
+      client_phone TEXT,
+
+      -- Location
+      address TEXT,
+      city TEXT,
+      region TEXT,
+      country TEXT DEFAULT 'Chile',
+      coordinates TEXT,
+
+      -- Team
+      seller_id TEXT,
+      service_chief_id TEXT,
+      lead_tech_id TEXT,
+      cuadrilla_id TEXT,
+
+      -- Dates
+      commitment_date TEXT,
+      installation_date TEXT,
+      delivery_date TEXT,
+      close_date TEXT,
+
+      -- Financials (hidden from techs)
+      sale_amount REAL DEFAULT 0,
+      estimated_cost REAL DEFAULT 0,
+      actual_cost REAL DEFAULT 0,
+      estimated_hours REAL DEFAULT 0,
+      actual_hours REAL DEFAULT 0,
+
+      -- Notes
+      commercial_notes TEXT,
+      technical_notes TEXT,
+      risks TEXT,
+
+      created_by TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS project_team (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      role TEXT DEFAULT 'tecnico',
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS project_logs (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      user_id TEXT,
+      user_name TEXT,
+      type TEXT NOT NULL DEFAULT 'event',
+      title TEXT NOT NULL,
+      description TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS project_tasks (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      parent_id TEXT,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT NOT NULL DEFAULT 'pendiente',
+      priority TEXT DEFAULT 'media',
+      assigned_to TEXT,
+      due_date TEXT,
+      estimated_hours REAL DEFAULT 0,
+      actual_hours REAL DEFAULT 0,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS project_checklist_items (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      category TEXT DEFAULT 'General',
+      item TEXT NOT NULL,
+      is_required INTEGER DEFAULT 1,
+      is_completed INTEGER DEFAULT 0,
+      completed_by TEXT,
+      completed_at TEXT,
+      notes TEXT,
+      sort_order INTEGER DEFAULT 0,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS project_documents (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'other',
+      name TEXT NOT NULL,
+      file_url TEXT,
+      file_size INTEGER,
+      mime_type TEXT,
+      notes TEXT,
+      uploaded_by TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS installed_equipment (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      account_id TEXT,
+      brand TEXT,
+      model TEXT,
+      sku TEXT,
+      serial_number TEXT,
+      installation_date TEXT,
+      location_detail TEXT,
+      warranty_start TEXT,
+      warranty_end TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS cuadrillas (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      chief_id TEXT,
+      specialty TEXT,
+      vehicle TEXT,
+      zone TEXT,
+      daily_capacity INTEGER DEFAULT 1,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS cuadrilla_members (
+      id TEXT PRIMARY KEY,
+      cuadrilla_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      FOREIGN KEY (cuadrilla_id) REFERENCES cuadrillas(id) ON DELETE CASCADE
+    );
+  `);
+
   // ── Migración: nuevos roles para empresas existentes ─────────────────
   const { run: dbRun, get: dbGet, all: dbAll } = require('./db');
   const newRoles = [
@@ -702,7 +876,11 @@ export function createSchema() {
     { name: 'Diseño',              description: 'Acceso a landing pages y recursos visuales' },
     { name: 'Servicio Técnico',    description: 'Gestión de actividades y soporte a clientes' },
     { name: 'Jefe de Bodega',      description: 'Gestión completa de inventario y proveedores' },
-    { name: 'Asistente de Bodega', description: 'Consulta y registro de movimientos de inventario' },
+    { name: 'Asistente de Bodega',       description: 'Consulta y registro de movimientos de inventario' },
+    { name: 'CEO / Gerencia',            description: 'Dashboard ejecutivo, KPIs, rentabilidad y estado de operaciones' },
+    { name: 'Jefe de Servicio Técnico',  description: 'Gestión completa de proyectos, técnicos, instalaciones, garantías y mantenciones' },
+    { name: 'Técnico',                   description: 'Acceso a proyectos asignados, checklist, evidencias y bitácora. Sin acceso a información financiera' },
+    { name: 'Cliente',                   description: 'Portal cliente: ver estado del proyecto, documentos autorizados, garantías y tickets' },
   ];
 
   try {
