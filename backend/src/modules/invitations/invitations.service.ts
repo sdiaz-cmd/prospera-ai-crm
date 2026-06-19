@@ -3,6 +3,7 @@ import { run, get, all } from '../../database/db';
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '../../utils/jwt';
 import normalizeEmailFn from 'validator/lib/normalizeEmail';
+import { sendViaGmail } from '../auth/google.controller';
 
 const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
@@ -48,17 +49,23 @@ export class InvitationsService {
 
     const link = `${APP_URL}/invite/${token}`;
 
-    // Intentar enviar email — si falla, igual retornamos el link para compartir manualmente
-    try {
-      await this.sendInvitationEmail(
-        data.email,
-        company?.name || 'Tu empresa',
-        `${inviter?.first_name || ''} ${inviter?.last_name || ''}`.trim(),
-        role.name,
-        token
-      );
-    } catch (emailErr) {
-      console.warn('[INVITACIÓN] Email no enviado (continúa):', (emailErr as Error).message);
+    const inviterName = `${inviter?.first_name || ''} ${inviter?.last_name || ''}`.trim();
+    const companyName = company?.name || 'Tu empresa';
+    const emailHtml = this.buildInvitationHtml(inviterName, companyName, role.name, link);
+    const emailSubject = `${inviterName} te invitó a ${companyName} en PROSPERA.AI`;
+
+    // 1. Intentar enviar vía Gmail del invitador
+    const gmailResult = await sendViaGmail(invitedBy, data.email, emailSubject, emailHtml);
+    if (gmailResult.success) {
+      console.log(`[INVITACIÓN] Enviada vía Gmail a ${data.email}`);
+    } else {
+      // 2. Fallback: Resend
+      console.log(`[INVITACIÓN] Gmail no disponible (${gmailResult.error}), intentando Resend...`);
+      try {
+        await this.sendInvitationEmail(data.email, companyName, inviterName, role.name, token);
+      } catch (emailErr) {
+        console.warn('[INVITACIÓN] Email no enviado (continúa):', (emailErr as Error).message);
+      }
     }
 
     return { id: invitationId, email: data.email, role: role.name, expiresAt, link };
@@ -171,6 +178,23 @@ export class InvitationsService {
     run('DELETE FROM user_invitations WHERE id = ? AND company_id = ?', [invitationId, companyId]);
   }
 
+  private buildInvitationHtml(inviterName: string, companyName: string, roleName: string, link: string) {
+    return `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+        <h2 style="color:#2563eb">PROSPERA.AI</h2>
+        <p>Hola,</p>
+        <p><strong>${inviterName}</strong> te invitó a unirte a <strong>${companyName}</strong> como <strong>${roleName}</strong>.</p>
+        <p>Haz clic en el siguiente botón para crear tu cuenta:</p>
+        <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+          Aceptar invitación
+        </a>
+        <p>O copia este enlace en tu navegador:</p>
+        <p style="color:#555;font-size:13px;word-break:break-all">${link}</p>
+        <p style="color:#888;font-size:12px">Este enlace expira en 7 días.</p>
+      </div>
+    `;
+  }
+
   private async sendInvitationEmail(
     toEmail: string,
     companyName: string,
@@ -185,7 +209,7 @@ export class InvitationsService {
       return;
     }
 
-    console.log(`[RESEND] Enviando invitación a ${toEmail}, from: ${RESEND_FROM}, link: ${link}`);
+    console.log(`[RESEND] Enviando invitación a ${toEmail}, from: ${RESEND_FROM}`);
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -194,28 +218,13 @@ export class InvitationsService {
         from: RESEND_FROM,
         to: toEmail,
         subject: `${inviterName} te invitó a ${companyName} en PROSPERA.AI`,
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-            <h2 style="color:#2563eb">PROSPERA.AI</h2>
-            <p>Hola,</p>
-            <p><strong>${inviterName}</strong> te invitó a unirte a <strong>${companyName}</strong> como <strong>${roleName}</strong>.</p>
-            <p>Haz clic en el siguiente botón para crear tu cuenta:</p>
-            <a href="${link}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
-              Aceptar invitación
-            </a>
-            <p>O copia este enlace en tu navegador:</p>
-            <p style="color:#555;font-size:13px;word-break:break-all">${link}</p>
-            <p style="color:#888;font-size:12px">Este enlace expira en 7 días.</p>
-          </div>
-        `,
+        html: this.buildInvitationHtml(inviterName, companyName, roleName, link),
       }),
     });
 
     const body = await res.json().catch(() => ({}));
     console.log(`[RESEND] Status: ${res.status}`, JSON.stringify(body));
 
-    if (!res.ok) {
-      throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
-    }
+    if (!res.ok) throw new Error(`Resend error ${res.status}: ${JSON.stringify(body)}`);
   }
 }
