@@ -52,6 +52,7 @@ import commissionsRoutes from './modules/commissions/commissions.routes';
 import costCentersRoutes from './modules/cost-centers/cost-centers.routes';
 // Operations
 import projectsRoutes from './modules/operations/projects.routes';
+import cuadrillasRoutes from './modules/operations/cuadrillas.routes';
 // Inventory
 import inventoryRoutes from './modules/inventory/inventory.routes';
 // WhatsApp
@@ -215,6 +216,7 @@ app.use('/api/commissions', commissionsRoutes);
 app.use('/api/cost-centers', costCentersRoutes);
 // Operations
 app.use('/api/projects', projectsRoutes);
+app.use('/api/cuadrillas', cuadrillasRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 // WhatsApp
