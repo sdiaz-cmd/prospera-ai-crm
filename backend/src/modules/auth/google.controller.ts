@@ -40,14 +40,24 @@ export function googleAuth(req: Request, res: Response) {
 }
 
 // ── 1b. Connect Gmail to existing account ────────────────────────────────────
+// The frontend passes the JWT as ?token= because browser redirects can't set headers
 
-export function googleConnect(req: AuthenticatedRequest, res: Response) {
+export function googleConnect(req: Request, res: Response) {
   if (!GOOGLE_CLIENT_ID) {
     return res.redirect(`${FRONTEND_URL}/settings?error=google_not_configured`);
   }
-  // Encode the authenticated userId in state so callback knows who to update
-  const state = `connect:${req.user!.userId}`;
-  res.redirect(buildGoogleAuthUrl(state));
+  // Verify the token passed as query param
+  const token = req.query.token as string;
+  if (!token) {
+    return res.redirect(`${FRONTEND_URL}/settings?error=auth_required`);
+  }
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const state = `connect:${payload.userId}`;
+    res.redirect(buildGoogleAuthUrl(state));
+  } catch {
+    return res.redirect(`${FRONTEND_URL}/settings?error=auth_required`);
+  }
 }
 
 // ── 2. Handle Google callback ─────────────────────────────────────────────────

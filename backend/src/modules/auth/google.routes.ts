@@ -5,7 +5,7 @@ import { authenticate } from '../../middleware/auth.middleware';
 const router = express.Router();
 
 router.get('/',            googleAuth);
-router.get('/connect',     authenticate, googleConnect);
+router.get('/connect',     googleConnect);
 router.get('/callback',    googleCallback);
 router.get('/status',      authenticate, googleStatus);
 router.delete('/disconnect', authenticate, googleDisconnect);

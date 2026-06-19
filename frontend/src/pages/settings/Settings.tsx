@@ -387,6 +387,7 @@ function WhatsAppPanel() {
 
 function GmailConfig() {
   const qc = useQueryClient();
+  const { accessToken } = useAuthStore();
 
   const { data, isLoading } = useQuery({
     queryKey: ['google-status'],
@@ -408,7 +409,7 @@ function GmailConfig() {
 
   const handleConnect = () => {
     const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '');
-    window.location.href = `${base}/api/auth/google/connect`;
+    window.location.href = `${base}/api/auth/google/connect?token=${accessToken}`;
   };
 
   return (
