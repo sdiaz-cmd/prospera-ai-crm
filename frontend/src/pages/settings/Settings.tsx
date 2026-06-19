@@ -383,6 +383,100 @@ function WhatsAppPanel() {
   );
 }
 
+// ─── Transfer Ownership ───────────────────────────────────────────────────────
+
+function TransferOwnershipSection() {
+  const { isOwner } = useAuthStore();
+  const [open, setOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [confirm, setConfirm] = useState(false);
+  const qc = useQueryClient();
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users-list'],
+    queryFn: () => api.get('/users?limit=100').then(r => r.data.data as { id: string; firstName: string; lastName: string; email: string; isOwner: boolean }[]),
+    enabled: open,
+  });
+
+  const transfer = useMutation({
+    mutationFn: (userId: string) => api.post('/users/transfer-owner', { userId }),
+    onSuccess: () => {
+      toast.success('Propiedad transferida. Tu sesión se actualizará.');
+      setOpen(false);
+      setConfirm(false);
+      qc.invalidateQueries({ queryKey: ['users-list'] });
+      // Force logout so the new owner logs in fresh
+      setTimeout(() => { window.location.href = '/login'; }, 1500);
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Error al transferir';
+      toast.error(msg);
+    },
+  });
+
+  if (!isOwner) return null;
+
+  const otherUsers = (usersData || []).filter(u => !u.isOwner);
+  const selected = otherUsers.find(u => u.id === selectedUserId);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Transferir propiedad</CardTitle>
+            <p className="text-xs text-gray-400 mt-0.5">Cede el rol de propietario a otro miembro del equipo</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)} className="text-red-500 hover:bg-red-50 border border-red-200">
+            Transferir propiedad
+          </Button>
+        </div>
+      </CardHeader>
+
+      {open && (
+        <div className="px-6 pb-6 space-y-4">
+          {!confirm ? (
+            <>
+              <p className="text-sm text-gray-600">Selecciona el usuario que pasará a ser propietario:</p>
+              <select
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedUserId}
+                onChange={e => setSelectedUserId(e.target.value)}
+              >
+                <option value="">— Seleccionar usuario —</option>
+                {otherUsers.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName} ({u.email})
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={!selectedUserId} onClick={() => setConfirm(true)}>Continuar</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setSelectedUserId(''); }}>Cancelar</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-red-700 mb-1">⚠️ Esta acción es irreversible</p>
+                <p className="text-sm text-red-600">
+                  Transferirás la propiedad a <strong>{selected?.firstName} {selected?.lastName}</strong> ({selected?.email}). Perderás acceso de propietario y tu sesión se cerrará.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" loading={transfer.isPending} onClick={() => transfer.mutate(selectedUserId)}>
+                  Sí, transferir propiedad
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setConfirm(false)}>Volver</Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ─── Gmail / Google OAuth Config ─────────────────────────────────────────────
 
 function GmailConfig() {
@@ -728,6 +822,8 @@ export function Settings() {
               </form>
             </Card>
           )}
+
+          {activeTab === 'empresa' && <TransferOwnershipSection />}
 
           {activeTab === 'plan' && (
             <Card>

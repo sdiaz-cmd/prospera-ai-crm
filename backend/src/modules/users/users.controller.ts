@@ -56,3 +56,15 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response, next:
     else next(error);
   }
 };
+
+export const transferOwnership = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { userId } = req.body;
+    if (!userId) { sendError(res, 'userId requerido', 400); return; }
+    usersService.transferOwnership(req.user!.companyId, req.user!.userId, userId);
+    sendSuccess(res, null, 'Propiedad transferida exitosamente');
+  } catch (error) {
+    if (error instanceof Error) sendError(res, error.message, 400);
+    else next(error);
+  }
+};

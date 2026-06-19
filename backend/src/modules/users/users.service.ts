@@ -123,4 +123,21 @@ export class UsersService {
     if (uc.is_owner) throw new Error('No se puede eliminar al propietario');
     run('DELETE FROM user_companies WHERE user_id = ? AND company_id = ?', [userId, companyId]);
   }
+
+  transferOwnership(companyId: string, currentOwnerId: string, newOwnerId: string) {
+    if (currentOwnerId === newOwnerId) throw new Error('Ya eres el propietario');
+    const currentUser = get<{ is_owner: number }>(
+      'SELECT is_owner FROM user_companies WHERE user_id = ? AND company_id = ?',
+      [currentOwnerId, companyId]
+    );
+    if (!currentUser?.is_owner) throw new Error('Solo el propietario puede transferir la propiedad');
+    const newUser = get<{ is_active: number }>(
+      'SELECT is_active FROM user_companies WHERE user_id = ? AND company_id = ?',
+      [newOwnerId, companyId]
+    );
+    if (!newUser) throw new Error('El usuario no pertenece a esta empresa');
+    if (!newUser.is_active) throw new Error('El usuario no está activo');
+    run('UPDATE user_companies SET is_owner = 0 WHERE company_id = ? AND user_id = ?', [companyId, currentOwnerId]);
+    run('UPDATE user_companies SET is_owner = 1 WHERE company_id = ? AND user_id = ?', [companyId, newOwnerId]);
+  }
 }
