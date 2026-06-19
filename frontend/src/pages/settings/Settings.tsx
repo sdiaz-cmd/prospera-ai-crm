@@ -408,7 +408,7 @@ function GmailConfig() {
 
   const handleConnect = () => {
     const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/api$/, '');
-    window.location.href = `${base}/api/auth/google`;
+    window.location.href = `${base}/api/auth/google/connect`;
   };
 
   return (
@@ -576,9 +576,22 @@ function IntegracionesTab() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function Settings() {
-  const [activeTab, setActiveTab] = useState('empresa');
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') || 'empresa';
+  });
   const { company } = useAuthStore();
   const queryClient = useQueryClient();
+
+  // Handle redirect back from Google OAuth connect flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('gmailConnected') === '1') {
+      queryClient.invalidateQueries({ queryKey: ['google-status'] });
+      toast.success('Gmail conectado correctamente');
+      window.history.replaceState({}, '', '/settings?tab=integraciones');
+    }
+  }, [queryClient]);
 
   const { data: companyData } = useQuery({
     queryKey: ['company-settings'],

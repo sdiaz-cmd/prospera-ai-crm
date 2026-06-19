@@ -14,15 +14,11 @@ const JWT_REFRESH_SECRET   = process.env.JWT_REFRESH_SECRET  || 'prospera-refres
 
 // ── 1. Redirect to Google consent screen ─────────────────────────────────────
 
-export function googleAuth(req: Request, res: Response) {
-  if (!GOOGLE_CLIENT_ID) {
-    return res.redirect(`${FRONTEND_URL}/login?error=google_not_configured`);
-  }
-
+function buildGoogleAuthUrl(state?: string) {
   const scopes = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
-    'https://mail.google.com/',          // Gmail send scope
+    'https://mail.google.com/',
   ].join(' ');
 
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -32,17 +28,39 @@ export function googleAuth(req: Request, res: Response) {
   url.searchParams.set('scope',         scopes);
   url.searchParams.set('access_type',   'offline');
   url.searchParams.set('prompt',        'consent');
+  if (state) url.searchParams.set('state', state);
+  return url.toString();
+}
 
-  res.redirect(url.toString());
+export function googleAuth(req: Request, res: Response) {
+  if (!GOOGLE_CLIENT_ID) {
+    return res.redirect(`${FRONTEND_URL}/login?error=google_not_configured`);
+  }
+  res.redirect(buildGoogleAuthUrl('login'));
+}
+
+// ── 1b. Connect Gmail to existing account ────────────────────────────────────
+
+export function googleConnect(req: AuthenticatedRequest, res: Response) {
+  if (!GOOGLE_CLIENT_ID) {
+    return res.redirect(`${FRONTEND_URL}/settings?error=google_not_configured`);
+  }
+  // Encode the authenticated userId in state so callback knows who to update
+  const state = `connect:${req.user!.userId}`;
+  res.redirect(buildGoogleAuthUrl(state));
 }
 
 // ── 2. Handle Google callback ─────────────────────────────────────────────────
 
 export async function googleCallback(req: Request, res: Response) {
-  const { code, error } = req.query;
+  const { code, error, state } = req.query;
+  const stateStr = (state as string) || '';
+  const isConnect = stateStr.startsWith('connect:');
+  const connectUserId = isConnect ? stateStr.replace('connect:', '') : null;
 
   if (error || !code) {
-    return res.redirect(`${FRONTEND_URL}/login?error=google_denied`);
+    const dest = isConnect ? `${FRONTEND_URL}/settings?tab=integraciones&error=google_denied` : `${FRONTEND_URL}/login?error=google_denied`;
+    return res.redirect(dest);
   }
 
   try {
@@ -82,6 +100,21 @@ export async function googleCallback(req: Request, res: Response) {
 
     if (!gUser.email) {
       return res.redirect(`${FRONTEND_URL}/login?error=google_no_email`);
+    }
+
+    // ── Connect Gmail flow (user already logged in) ───────────────────────────
+    if (isConnect && connectUserId) {
+      dbRun(
+        `UPDATE users
+           SET google_id = ?,
+               google_refresh_token = COALESCE(?, google_refresh_token),
+               avatar_url = COALESCE(avatar_url, ?),
+               updated_at = datetime('now')
+         WHERE id = ?`,
+        [gUser.id, tokens.refresh_token || null, gUser.picture || null, connectUserId]
+      );
+      console.log(`[Google Connect] Gmail vinculado para userId=${connectUserId}, refresh_token=${tokens.refresh_token ? 'OK' : 'NOT_RETURNED'}`);
+      return res.redirect(`${FRONTEND_URL}/settings?tab=integraciones&gmailConnected=1`);
     }
 
     // Find user by google_id OR email
