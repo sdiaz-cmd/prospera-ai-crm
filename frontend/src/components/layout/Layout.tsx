@@ -3,12 +3,17 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { cn } from '@/utils/helpers';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { isDark } = useTheme();
 
   return (
-    <div className="min-h-screen" style={{ background: '#f0f2f7' }}>
+    <div
+      className="min-h-screen"
+      style={{ background: isDark ? '#0d1117' : '#f0f2f7' }}
+    >
       <Sidebar collapsed={sidebarCollapsed} />
       <Header
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
