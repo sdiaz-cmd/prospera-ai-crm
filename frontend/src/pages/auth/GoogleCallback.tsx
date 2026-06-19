@@ -55,7 +55,7 @@ export function GoogleCallback() {
 
     setAuth({
       user: { id: userId, email, firstName, lastName },
-      company: { id: companyId, name: companyName, slug: companySlug, plan: companyPlan },
+      company: { id: companyId, name: companyName, slug: companySlug, plan: companyPlan, currency: 'USD', timezone: 'America/Santiago' },
       role: { id: '', name: roleName },
       permissions: [],
       accessToken,
