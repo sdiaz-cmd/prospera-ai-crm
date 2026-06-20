@@ -56,7 +56,9 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
     <header
       className={cn(
         'fixed top-0 right-0 h-14 z-30 flex items-center px-5 gap-4 transition-all duration-300',
-        sidebarCollapsed ? 'left-[60px]' : 'left-[240px]'
+        // Mobile: full width (sidebar is off-screen); desktop: offset by sidebar
+        'left-0',
+        sidebarCollapsed ? 'lg:left-[60px]' : 'lg:left-[240px]'
       )}
       style={{
         background: headerBg,

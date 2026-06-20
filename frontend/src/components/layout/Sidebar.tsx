@@ -6,7 +6,7 @@ import {
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
   ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check, Coins, FolderKanban,
-  Wrench, ClipboardList, CalendarDays, HardHat, Activity,
+  Wrench, ClipboardList, CalendarDays, HardHat, Activity, X,
 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -181,14 +181,20 @@ interface CollapsibleSectionProps {
   features: Record<string, boolean>;
   onLockedClick: () => void;
   defaultOpen?: boolean;
+  mobileExpanded?: boolean;
 }
 
 function CollapsibleSection({
-  label, icon: SectionIcon, items, collapsed, features, onLockedClick, defaultOpen = false,
+  label, icon: SectionIcon, items, collapsed, features, onLockedClick, defaultOpen = false, mobileExpanded = false,
 }: CollapsibleSectionProps) {
   const location = useLocation();
   const isAnyActive = items.some(item => location.pathname.startsWith(item.to));
   const [open, setOpen] = useState(defaultOpen || isAnyActive);
+
+  // Auto-expand when mobile drawer opens
+  useEffect(() => {
+    if (mobileExpanded) setOpen(true);
+  }, [mobileExpanded]);
 
   // When sidebar is collapsed, show icon-only with tooltip; no expand/collapse
   if (collapsed) {
@@ -410,7 +416,13 @@ function CompanySwitcher({ collapsed }: { collapsed: boolean }) {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export function Sidebar({ collapsed }: { collapsed: boolean }) {
+export function Sidebar({ collapsed: collapsedDesktop, mobileOpen, onMobileClose }: {
+  collapsed: boolean;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+}) {
+  // On mobile (drawer open), always show full expanded sidebar regardless of desktop state
+  const collapsed = mobileOpen ? false : collapsedDesktop;
   const { user, company } = useAuthStore();
   const navigate = useNavigate();
   const features = getPlanFeatures(company?.plan || 'trial');
@@ -433,8 +445,9 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-screen flex flex-col z-40 transition-all duration-300',
-        collapsed ? 'w-[60px]' : 'w-[240px]'
+        'fixed left-0 top-0 h-screen flex flex-col z-50 transition-all duration-300',
+        collapsed ? 'w-[60px]' : 'w-[240px]',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
       )}
       style={{
         background: 'linear-gradient(175deg, #0c1220 0%, #080d18 60%, #060a12 100%)',
@@ -454,26 +467,35 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
       >
         <ProspLogo size={collapsed ? 30 : 34} />
         {!collapsed && (
-          <div className="flex flex-col leading-none">
-            <span
-              className="font-extrabold text-[15px] tracking-wide"
-              style={{
-                background: 'linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
+          <>
+            <div className="flex flex-col leading-none flex-1 min-w-0">
+              <span
+                className="font-extrabold text-[15px] tracking-wide"
+                style={{
+                  background: 'linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                PROSPERA
+                <span style={{ background: 'linear-gradient(90deg, #60a5fa, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  .AI
+                </span>
+              </span>
+              {company && (
+                <span className={cn('mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full self-start', planBadge.cls)}>
+                  {planBadge.label}
+                </span>
+              )}
+            </div>
+            {/* Close button — mobile only */}
+            <button
+              onClick={onMobileClose}
+              className="flex-shrink-0 p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-white/[0.08] transition-colors lg:hidden"
             >
-              PROSPERA
-              <span style={{ background: 'linear-gradient(90deg, #60a5fa, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                .AI
-              </span>
-            </span>
-            {company && (
-              <span className={cn('mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full self-start', planBadge.cls)}>
-                {planBadge.label}
-              </span>
-            )}
-          </div>
+              <X className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
 
@@ -501,6 +523,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           features={features}
           onLockedClick={handleLocked}
           defaultOpen={true}
+          mobileExpanded={mobileOpen}
           items={[
             { to: '/crm/leads',         icon: UserCircle,  label: t('nav.leads') },
             { to: '/crm/contacts',      icon: Users,       label: t('nav.contacts') },
@@ -524,6 +547,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
+          mobileExpanded={mobileOpen}
           items={[
             { to: '/erp/products',  icon: Package,     label: t('nav.products'),   feature: 'erp' },
             { to: '/erp/suppliers', icon: Truck,       label: t('nav.suppliers'),  feature: 'erp' },
@@ -544,6 +568,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
+          mobileExpanded={mobileOpen}
           items={[
             { to: '/operations/dashboard', icon: Activity,      label: t('nav.dashboardOps') },
             { to: '/operations/projects',  icon: ClipboardList, label: t('nav.projects') },
@@ -564,6 +589,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
+          mobileExpanded={mobileOpen}
           items={[
             { to: '/marketing', icon: Megaphone, label: t('nav.campaigns'),    feature: 'marketing' },
             { to: '/landing',   icon: Globe,     label: t('nav.landingPages'), feature: 'landing' },
@@ -582,6 +608,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
           collapsed={collapsed}
           features={features}
           onLockedClick={handleLocked}
+          mobileExpanded={mobileOpen}
           items={[
             { to: '/whatsapp-agent', icon: MessageCircle, label: t('nav.whatsapp'),    badge: unreadCount > 0 ? unreadCount : undefined },
             { to: '/ai',             icon: Bot,           label: t('nav.ai'),           feature: 'ai' },
