@@ -21,6 +21,7 @@
     line-height: 1.5;
     color: #1e2330;
     background-color: #f0f2f7;
+    overscroll-behavior-y: contain;
   }
 
   /* Default scrollbar */

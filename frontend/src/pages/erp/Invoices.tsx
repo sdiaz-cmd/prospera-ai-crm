@@ -27,6 +27,8 @@ function LineItems({ items, onChange }: { items: InvoiceItem[]; onChange: (items
 
   return (
     <div className="space-y-2">
+      <div className="overflow-x-auto">
+      <div className="min-w-[500px]">
       <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase px-1">
         <div className="col-span-5">Descripción</div><div className="col-span-2 text-right">Cant.</div>
         <div className="col-span-2 text-right">Precio</div><div className="col-span-1 text-right">Desc%</div>
@@ -59,6 +61,8 @@ function LineItems({ items, onChange }: { items: InvoiceItem[]; onChange: (items
           </div>
         );
       })}
+      </div>
+      </div>
       <button onClick={add} className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 mt-2">
         <PlusCircle className="w-4 h-4" /> Agregar línea
       </button>
@@ -184,12 +188,13 @@ export function Invoices() {
         </div>
 
         <Card>
-          <div className="grid grid-cols-3 gap-6 pb-5 border-b border-gray-100 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-5 border-b border-gray-100 mb-5">
             {selected.issueDate && <div><p className="text-xs text-gray-400 uppercase font-medium">Emisión</p><p className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(selected.issueDate)}</p></div>}
             {selected.dueDate && <div><p className="text-xs text-gray-400 uppercase font-medium">Vencimiento</p><p className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(selected.dueDate)}</p></div>}
             {selected.paidAt && <div><p className="text-xs text-gray-400 uppercase font-medium">Pagada</p><p className="text-sm font-medium text-green-600 mt-0.5">{formatDate(selected.paidAt)}</p></div>}
           </div>
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[500px]">
             <thead><tr className="text-xs font-medium text-gray-500 uppercase border-b border-gray-100">
               <th className="text-left pb-2">Descripción</th><th className="text-right pb-2">Cant.</th>
               <th className="text-right pb-2">Precio</th><th className="text-right pb-2">Desc%</th><th className="text-right pb-2">Total</th>
@@ -206,6 +211,7 @@ export function Invoices() {
               ))}
             </tbody>
           </table>
+          </div>
           <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
             <div className="w-64 space-y-1.5 text-sm">
               <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>{formatCurrency(selected.subtotal)}</span></div>
@@ -221,7 +227,7 @@ export function Invoices() {
 
   // List view
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Facturas</h1>
@@ -231,7 +237,7 @@ export function Invoices() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {(['sent', 'paid', 'overdue', 'draft'] as const).map(s => {
             const cfg = STATUS_CONFIG[s]; const Icon = cfg.icon; const stat = stats[s];
             const colors: Record<string, string> = { sent: 'bg-blue-100 text-blue-600', paid: 'bg-green-100 text-green-600', overdue: 'bg-red-100 text-red-500', draft: 'bg-gray-100 text-gray-600' };

@@ -727,37 +727,37 @@ export function Settings() {
         <p className="text-gray-500 mt-1">Gestiona la configuración de tu empresa</p>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col md:flex-row gap-6">
         {/* Tabs laterales */}
-        <div className="w-56 flex-shrink-0">
-          <nav className="space-y-1">
+        <div className="md:w-56 md:flex-shrink-0">
+          <nav className="flex md:flex-col gap-1 overflow-x-auto pb-1 md:pb-0">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left',
+                  'flex-shrink-0 md:flex-shrink flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left',
                   activeTab === tab.id
                     ? 'bg-primary-50 text-primary-700'
                     : 'text-gray-600 hover:bg-gray-100'
                 )}
               >
                 <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <span className="whitespace-nowrap">{tab.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
         {/* Contenido */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {activeTab === 'empresa' && (
             <Card>
               <CardHeader>
                 <CardTitle>Información de la Empresa</CardTitle>
               </CardHeader>
               <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Nombre de la empresa"
                     error={errors.name?.message}
@@ -771,16 +771,16 @@ export function Settings() {
                     {...register('website')}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input label="Teléfono" placeholder="+52 55 1234 5678" {...register('phone')} />
                   <Input label="Correo de contacto" type="email" {...register('email')} />
                 </div>
                 <Input label="Dirección" {...register('address')} />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input label="Ciudad" {...register('city')} />
                   <Input label="País" {...register('country')} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Zona horaria</label>
                     <select
@@ -840,7 +840,7 @@ export function Settings() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {[
                     { name: 'Starter', price: '$80.000 CLP', subPrice: '~$88 USD', features: ['5 usuarios', 'CRM completo', 'Soporte por correo'] },
                     { name: 'Growth', price: '$150.000 CLP', subPrice: '~$164 USD', features: ['15 usuarios', 'CRM + ERP', 'Marketing', 'Soporte prioritario'], popular: true },

@@ -123,7 +123,7 @@ export function Products() {
   const categories = data?.categories || [];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Catálogo de Productos</h1>
@@ -134,7 +134,7 @@ export function Products() {
 
       {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total productos', value: stats.total, icon: Package, color: 'bg-blue-100 text-blue-600' },
             { label: 'Stock bajo', value: stats.lowStock, icon: AlertTriangle, color: 'bg-red-100 text-red-500' },
@@ -176,7 +176,8 @@ export function Products() {
         ) : products.length === 0 ? (
           <div className="py-20 text-center"><Package className="w-10 h-10 text-gray-200 mx-auto mb-2" /><p className="text-gray-400 text-sm">Sin productos</p></div>
         ) : (
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr className="text-xs font-medium text-gray-500 uppercase">
                 <th className="text-left px-5 py-3">Producto</th>
@@ -228,6 +229,7 @@ export function Products() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Card>
 

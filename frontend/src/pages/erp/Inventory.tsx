@@ -125,7 +125,7 @@ export function Inventory() {
 
       {/* Resumen */}
       {summary && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total productos', value: summary.total, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
             { label: 'Sin stock', value: summary.sinStock, icon: X, color: 'text-red-600', bg: 'bg-red-50' },
@@ -164,7 +164,7 @@ export function Inventory() {
       {isLoading ? <LoadingSpinner /> : (
         <Card padding="none">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b border-gray-100">
                   {['Producto', 'SKU', 'Categoría', 'Stock actual', 'Stock mínimo', 'Precio venta', 'Estado', 'Acciones'].map(h => (

@@ -167,7 +167,7 @@ export function Opportunities() {
   const allStagesMeta = stages.map(s => ({ id: s.id as string, name: s.name as string }));
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -183,7 +183,7 @@ export function Opportunities() {
 
       {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -221,13 +221,14 @@ export function Opportunities() {
       {isLoading ? (
         <div className="py-20 text-center text-gray-400">Cargando pipeline...</div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-6">
+        <div className="overflow-x-auto pb-6">
+        <div className="flex gap-4 min-w-max">
           {stages.map((stage) => {
             const opps = stage.opportunities as unknown as Opportunity[];
             const stageTotal = opps.reduce((sum, o) => sum + o.amount, 0);
 
             return (
-              <div key={stage.id as string} className="flex-shrink-0 w-72">
+              <div key={stage.id as string} className="w-72 flex-shrink-0">
                 {/* Stage Header */}
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
@@ -262,6 +263,7 @@ export function Opportunities() {
               </div>
             );
           })}
+        </div>
         </div>
       )}
 

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   MessageCircle, Bot, Send, Phone, User,
   Settings2, Zap, ZapOff, Plus, Trash2, RefreshCw,
-  CheckCheck, Circle
+  CheckCheck, Circle, ArrowLeft
 } from 'lucide-react';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -61,6 +61,7 @@ function ConvAvatar({ name, isContact }: { name: string; isContact: boolean }) {
 
 function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: () => void }) {
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
+  const showList = !selectedPhone;
   const [draft, setDraft] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -118,7 +119,7 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
     <div className="flex bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-card" style={{ height: 'calc(100vh - 220px)', minHeight: 500 }}>
 
       {/* ── Left: conversation list ─────────────────────────────── */}
-      <div className="w-80 flex-shrink-0 border-r border-gray-100 flex flex-col bg-gray-50">
+      <div className={cn('flex-shrink-0 border-r border-gray-100 flex flex-col bg-gray-50 w-full md:w-80', !showList && 'hidden md:flex')}>
 
         {/* Header */}
         <div className="px-4 pt-4 pb-3 border-b border-gray-100 space-y-3">
@@ -233,7 +234,7 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
       </div>
 
       {/* ── Right: chat view ────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col bg-white min-w-0">
+      <div className={cn('flex-1 flex flex-col bg-white min-w-0', showList && 'hidden md:flex')}>
         {!selectedPhone ? (
           <div className="flex-1 flex items-center justify-center bg-gray-50/50">
             <div className="text-center space-y-3">
@@ -248,6 +249,12 @@ function InboxTab({ agentActive, onToggle }: { agentActive: boolean; onToggle: (
           <>
             {/* Chat header */}
             <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-3 bg-white">
+              <button
+                onClick={() => setSelectedPhone(null)}
+                className="md:hidden p-1.5 -ml-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <ConvAvatar name={selectedConv?.contactName || selectedPhone} isContact={!!selectedConv?.contactId} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900">{selectedConv?.contactName}</p>

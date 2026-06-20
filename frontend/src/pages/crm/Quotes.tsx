@@ -43,6 +43,8 @@ function LineItemsEditor({ items, onChange }: {
 
   return (
     <div className="space-y-2">
+      <div className="overflow-x-auto">
+      <div className="min-w-[500px]">
       <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-500 uppercase px-1">
         <div className="col-span-5">Descripción</div>
         <div className="col-span-2 text-right">Cantidad</div>
@@ -96,6 +98,8 @@ function LineItemsEditor({ items, onChange }: {
           </div>
         );
       })}
+      </div>
+      </div>
       <button onClick={add}
         className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 mt-2">
         <PlusCircle className="w-4 h-4" /> Agregar línea
@@ -328,7 +332,7 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
 
       <Card>
         {/* Meta info */}
-        <div className="grid grid-cols-3 gap-6 pb-5 border-b border-gray-100 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-5 border-b border-gray-100 mb-5">
           {quote.accountName && (
             <div>
               <p className="text-xs text-gray-400 uppercase font-medium">Cuenta</p>
@@ -368,7 +372,8 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
         </div>
 
         {/* Items table */}
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[500px]">
           <thead>
             <tr className="text-xs font-medium text-gray-500 uppercase border-b border-gray-100">
               <th className="text-left pb-2 font-medium">Descripción</th>
@@ -390,6 +395,7 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
             ))}
           </tbody>
         </table>
+        </div>
 
         {/* Totals */}
         <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
@@ -419,7 +425,7 @@ function QuoteDetail({ quote, onBack, onEdit, onDelete, onChangeStatus }: {
 
         {/* Notes / Terms */}
         {(quote.notes || quote.terms) && (
-          <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-6">
+          <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-6">
             {quote.notes && (
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase mb-1">Notas</p>
@@ -645,7 +651,7 @@ export function Quotes() {
 
   // ─── List view ────────────────────────────────────────────────────
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Cotizaciones</h1>
@@ -660,7 +666,7 @@ export function Quotes() {
 
       {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {(['draft', 'sent', 'accepted', 'rejected'] as const).map(s => {
             const cfg = STATUS_CONFIG[s];
             const Icon = cfg.icon;
