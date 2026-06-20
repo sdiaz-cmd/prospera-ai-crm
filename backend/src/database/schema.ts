@@ -909,6 +909,9 @@ export function createSchema() {
     console.error('[DB] Error en migración de roles:', (err as Error).message);
   }
 
+  // ── Columna file_path en project_documents (migración incremental) ──
+  try { db.exec('ALTER TABLE project_documents ADD COLUMN file_path TEXT'); } catch { /* ya existe */ }
+
   // ── Apollo: búsquedas guardadas + historial de importaciones ────────
   db.exec(`
     CREATE TABLE IF NOT EXISTS apollo_saved_searches (

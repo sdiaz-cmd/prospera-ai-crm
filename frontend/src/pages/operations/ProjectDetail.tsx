@@ -5,6 +5,7 @@ import {
   ArrowLeft, ChevronDown, Plus, Check, Trash2,
   Clock, User, FileText, Wrench, CheckSquare,
   MessageSquare, Package, ChevronRight, X, Edit2, Save,
+  Upload, Download, Link as LinkIcon, Image, File, Loader2,
 } from 'lucide-react';
 import api from '@/services/api';
 import toast from 'react-hot-toast';
@@ -364,22 +365,85 @@ function ChecklistTab({ projectId }: { projectId: string }) {
 
 const DOC_TYPES = ['OC', 'Contrato', 'Plano', 'Acta de entrega', 'Manual', 'Garantía', 'Factura', 'Foto', 'Otro'];
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function DocIcon({ mime }: { mime: string | null }) {
+  if (!mime) return <FileText className="w-5 h-5 text-gray-400" />;
+  if (mime.startsWith('image/')) return <Image className="w-5 h-5 text-purple-500" />;
+  if (mime === 'application/pdf') return <FileText className="w-5 h-5 text-red-500" />;
+  if (mime.includes('word') || mime.includes('document')) return <FileText className="w-5 h-5 text-blue-600" />;
+  if (mime.includes('excel') || mime.includes('sheet')) return <FileText className="w-5 h-5 text-green-600" />;
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return <FileText className="w-5 h-5 text-orange-500" />;
+  return <File className="w-5 h-5 text-gray-500" />;
+}
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api';
+
 function DocumentsTab({ projectId }: { projectId: string }) {
-  const [form, setForm] = useState({ type: 'OC', name: '', fileUrl: '', notes: '' });
   const [showForm, setShowForm] = useState(false);
+  const [mode, setMode] = useState<'upload' | 'url'>('upload');
+  const [form, setForm] = useState({ type: 'OC', name: '', fileUrl: '', notes: '' });
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [drag, setDrag] = useState(false);
   const qc = useQueryClient();
+
   const { data: docs = [] } = useQuery<ProjectDocument[]>({
     queryKey: ['project-docs', projectId],
     queryFn: () => api.get(`/projects/${projectId}/documents`).then(r => r.data.data),
   });
-  const add = useMutation({
+
+  const addUrl = useMutation({
     mutationFn: (d: typeof form) => api.post(`/projects/${projectId}/documents`, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project-docs', projectId] }); setForm({ type: 'OC', name: '', fileUrl: '', notes: '' }); setShowForm(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['project-docs', projectId] });
+      setForm({ type: 'OC', name: '', fileUrl: '', notes: '' });
+      setShowForm(false);
+      toast.success('Documento agregado');
+    },
   });
+
   const del = useMutation({
     mutationFn: (id: string) => api.delete(`/projects/${projectId}/documents/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['project-docs', projectId] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project-docs', projectId] }); toast.success('Documento eliminado'); },
   });
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('type', form.type);
+      fd.append('name', form.name || file.name);
+      if (form.notes) fd.append('notes', form.notes);
+      await api.post(`/projects/${projectId}/documents/upload`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      qc.invalidateQueries({ queryKey: ['project-docs', projectId] });
+      setFile(null); setForm({ type: 'OC', name: '', fileUrl: '', notes: '' }); setShowForm(false);
+      toast.success('Archivo subido');
+    } catch (e: unknown) {
+      toast.error((e as Error).message || 'Error al subir archivo');
+    }
+    setUploading(false);
+  };
+
+  const getDocUrl = (d: ProjectDocument) => {
+    if (d.filePath) return `${API_BASE}/projects/uploads/${d.filePath}`;
+    if (d.fileUrl) return d.fileUrl;
+    return null;
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDrag(false);
+    const f = e.dataTransfer.files[0];
+    if (f) { setFile(f); if (!form.name) setForm(prev => ({ ...prev, name: f.name })); }
+  };
 
   return (
     <div className="space-y-4">
@@ -392,6 +456,16 @@ function DocumentsTab({ projectId }: { projectId: string }) {
 
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          {/* Mode toggle */}
+          <div className="flex rounded-lg overflow-hidden border border-gray-200 text-xs w-fit">
+            <button onClick={() => setMode('upload')} className={cn('px-3 py-1.5 flex items-center gap-1.5', mode === 'upload' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50')}>
+              <Upload className="w-3 h-3" /> Subir archivo
+            </button>
+            <button onClick={() => setMode('url')} className={cn('px-3 py-1.5 flex items-center gap-1.5', mode === 'url' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-50')}>
+              <LinkIcon className="w-3 h-3" /> Enlace URL
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-400">Tipo</label>
@@ -401,21 +475,58 @@ function DocumentsTab({ projectId }: { projectId: string }) {
             </div>
             <div>
               <label className="text-xs text-gray-400">Nombre</label>
-              <input className={inputCls} placeholder="Nombre del documento" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              <input className={inputCls} placeholder={file ? file.name : 'Nombre del documento'} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
           </div>
+
+          {mode === 'upload' ? (
+            <div
+              onDragOver={e => { e.preventDefault(); setDrag(true); }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={handleDrop}
+              className={cn('border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors', drag ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300')}
+            >
+              <label className="cursor-pointer block">
+                {file ? (
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
+                    <DocIcon mime={file.type} />
+                    <span className="font-medium truncate max-w-[200px]">{file.name}</span>
+                    <span className="text-gray-400 text-xs">({formatBytes(file.size)})</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-6 h-6 text-gray-300 mx-auto mb-1" />
+                    <p className="text-xs text-gray-400">Arrastra un archivo o <span className="text-blue-500">haz clic para buscar</span></p>
+                    <p className="text-xs text-gray-300 mt-0.5">PDF, Word, Excel, imagen — máx 20 MB</p>
+                  </>
+                )}
+                <input type="file" className="hidden" onChange={e => {
+                  const f = e.target.files?.[0];
+                  if (f) { setFile(f); if (!form.name) setForm(prev => ({ ...prev, name: f.name })); }
+                }} />
+              </label>
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs text-gray-400">URL del archivo</label>
+              <input className={inputCls} placeholder="https://drive.google.com/..." value={form.fileUrl} onChange={e => setForm(f => ({ ...f, fileUrl: e.target.value }))} />
+            </div>
+          )}
+
           <div>
-            <label className="text-xs text-gray-400">URL del archivo (opcional)</label>
-            <input className={inputCls} placeholder="https://..." value={form.fileUrl} onChange={e => setForm(f => ({ ...f, fileUrl: e.target.value }))} />
-          </div>
-          <div>
-            <label className="text-xs text-gray-400">Notas</label>
+            <label className="text-xs text-gray-400">Notas (opcional)</label>
             <input className={inputCls} placeholder="Descripción..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
+
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancelar</button>
-            <button onClick={() => { if (form.name.trim()) add.mutate(form); }} disabled={!form.name.trim() || add.isPending} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs transition-colors">
-              Guardar
+            <button onClick={() => { setShowForm(false); setFile(null); }} className="text-xs text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancelar</button>
+            <button
+              onClick={mode === 'upload' ? handleUpload : () => { if (form.name.trim()) addUrl.mutate(form); }}
+              disabled={mode === 'upload' ? !file || uploading : !form.name.trim() || addUrl.isPending}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg text-xs transition-colors"
+            >
+              {(uploading || addUrl.isPending) && <Loader2 className="w-3 h-3 animate-spin" />}
+              {mode === 'upload' ? 'Subir' : 'Guardar'}
             </button>
           </div>
         </div>
@@ -425,26 +536,32 @@ function DocumentsTab({ projectId }: { projectId: string }) {
         <p className="text-gray-400 text-sm text-center py-8">Sin documentos agregados</p>
       ) : (
         <div className="space-y-2">
-          {docs.map(d => (
-            <div key={d.id} className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl group">
-              <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-blue-500/20 text-blue-700 px-2 py-0.5 rounded-full">{d.type}</span>
-                  <span className="text-sm text-gray-700 truncate">{d.name}</span>
+          {docs.map(d => {
+            const url = getDocUrl(d);
+            return (
+              <div key={d.id} className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl group">
+                <div className="flex-shrink-0"><DocIcon mime={d.mimeType} /></div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] bg-blue-500/20 text-blue-700 px-2 py-0.5 rounded-full">{d.type}</span>
+                    <span className="text-sm text-gray-700 truncate">{d.name}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {d.notes && <p className="text-xs text-gray-400 truncate">{d.notes}</p>}
+                    {d.fileSize && <span className="text-xs text-gray-300">{formatBytes(d.fileSize)}</span>}
+                  </div>
                 </div>
-                {d.notes && <p className="text-xs text-gray-400 mt-0.5 truncate">{d.notes}</p>}
+                {url && (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 flex items-center gap-1 text-xs text-blue-400 hover:text-blue-700 transition-colors">
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                )}
+                <button onClick={() => del.mutate(d.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all flex-shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              {d.fileUrl && (
-                <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:text-blue-700 flex-shrink-0">
-                  Ver <ChevronRight className="w-3 h-3 inline" />
-                </a>
-              )}
-              <button onClick={() => del.mutate(d.id)} className="opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-400 transition-all">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

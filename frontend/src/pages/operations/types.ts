@@ -114,7 +114,8 @@ export interface ChecklistItem {
 
 export interface ProjectDocument {
   id: string; projectId: string; type: string; name: string;
-  fileUrl: string | null; fileSize: number | null; mimeType: string | null;
+  fileUrl: string | null; filePath: string | null;
+  fileSize: number | null; mimeType: string | null;
   notes: string | null; uploadedBy: string | null; createdAt: string;
 }
 

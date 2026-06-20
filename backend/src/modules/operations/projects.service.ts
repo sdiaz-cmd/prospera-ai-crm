@@ -90,7 +90,8 @@ export interface ChecklistItem {
 
 export interface ProjectDocument {
   id: string; projectId: string; type: string; name: string;
-  fileUrl: string | null; fileSize: number | null; mimeType: string | null;
+  fileUrl: string | null; filePath: string | null;
+  fileSize: number | null; mimeType: string | null;
   notes: string | null; uploadedBy: string | null; createdAt: string;
 }
 
@@ -462,23 +463,39 @@ export class ProjectsService {
     ).map(r => ({
       id: r.id as string, projectId: r.project_id as string,
       type: r.type as string, name: r.name as string,
-      fileUrl: r.file_url as string | null, fileSize: r.file_size as number | null,
+      fileUrl: r.file_url as string | null,
+      filePath: r.file_path as string | null,
+      fileSize: r.file_size as number | null,
       mimeType: r.mime_type as string | null, notes: r.notes as string | null,
       uploadedBy: r.uploaded_by as string | null, createdAt: r.created_at as string,
     }));
   }
 
   addDocument(projectId: string, companyId: string, userId: string, data: {
-    type: string; name: string; fileUrl?: string; notes?: string;
+    type: string; name: string; fileUrl?: string | null; filePath?: string;
+    fileSize?: number; mimeType?: string; notes?: string;
   }): ProjectDocument {
     const id = uuid();
-    run(`INSERT INTO project_documents (id, project_id, company_id, type, name, file_url, notes, uploaded_by)
-         VALUES (?,?,?,?,?,?,?,?)`,
-      [id, projectId, companyId, data.type, data.name, data.fileUrl || null, data.notes || null, userId]);
+    run(`INSERT INTO project_documents (id, project_id, company_id, type, name, file_url, file_path, file_size, mime_type, notes, uploaded_by)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [id, projectId, companyId, data.type, data.name,
+       data.fileUrl || null, data.filePath || null,
+       data.fileSize || null, data.mimeType || null,
+       data.notes || null, userId]);
     return this.getDocuments(projectId).find(d => d.id === id)!;
   }
 
   deleteDocument(docId: string, projectId: string): void {
+    // Also remove file from disk if stored locally
+    const doc = all<Record<string, unknown>>(
+      'SELECT file_path FROM project_documents WHERE id = ?', [docId]
+    )[0];
+    if (doc?.file_path) {
+      const { UPLOAD_DIR } = require('../../middleware/upload.middleware');
+      const { unlinkSync, existsSync } = require('fs');
+      const fullPath = require('path').join(UPLOAD_DIR, doc.file_path as string);
+      if (existsSync(fullPath)) { try { unlinkSync(fullPath); } catch { /* ignore */ } }
+    }
     run('DELETE FROM project_documents WHERE id = ? AND project_id = ?', [docId, projectId]);
   }
 

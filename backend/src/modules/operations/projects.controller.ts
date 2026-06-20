@@ -282,6 +282,21 @@ export const addDocument = async (req: AuthenticatedRequest, res: Response, next
   } catch (err) { next(err); }
 };
 
+export const uploadDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const file = req.file;
+    if (!file) { sendError(res, 'No se recibió archivo', 400); return; }
+    const type = (req.body.type as string) || 'other';
+    const name = (req.body.name as string) || file.originalname;
+    const notes = (req.body.notes as string) || undefined;
+    const doc = projectsService.addDocument(req.params.id, req.user!.companyId, req.user!.userId, {
+      type, name, fileUrl: null, filePath: file.filename,
+      fileSize: file.size, mimeType: file.mimetype, notes,
+    });
+    sendSuccess(res, doc, 'Archivo subido', 201);
+  } catch (err) { next(err); }
+};
+
 export const deleteDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     projectsService.deleteDocument(req.params.docId, req.params.id);
