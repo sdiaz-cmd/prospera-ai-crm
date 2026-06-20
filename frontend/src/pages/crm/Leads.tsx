@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as XLSX from 'xlsx';
 import { Plus, Search, Filter, LayoutGrid, List, Star, MoreVertical, UserCheck, Trash2, X, Telescope, ExternalLink, CheckSquare, Square, Loader2, Upload, Download, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { leadsService, apolloService } from '@/services/crm.service';
@@ -396,14 +397,29 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
   const users = (usersData?.data as { id: string; firstName: string; lastName: string }[]) || [];
 
   const handleFile = (f: File) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const text = e.target?.result as string;
-      setCsvText(text);
-      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
-      setPreview(lines.slice(0, 6).map(l => l.split(',').map(c => c.replace(/^"|"$/g, ''))));
-    };
-    reader.readAsText(f, 'UTF-8');
+    const isXlsx = f.name.endsWith('.xlsx') || f.name.endsWith('.xls');
+    if (isXlsx) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        setCsvText(csv);
+        const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+        setPreview(lines.slice(0, 6).map(l => l.split(',').map(c => c.replace(/^"|"$/g, ''))));
+      };
+      reader.readAsArrayBuffer(f);
+    } else {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const text = e.target?.result as string;
+        setCsvText(text);
+        const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+        setPreview(lines.slice(0, 6).map(l => l.split(',').map(c => c.replace(/^"|"$/g, ''))));
+      };
+      reader.readAsText(f, 'UTF-8');
+    }
   };
 
   const handleImport = async () => {
@@ -456,11 +472,11 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
         <label className="flex-1 flex items-center gap-2 border-2 border-dashed border-gray-300 rounded-lg px-4 py-3 cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
           <Upload className="w-4 h-4 text-gray-400" />
           <span className="text-sm text-gray-500">
-            {csvText ? 'Archivo cargado — haz clic para cambiar' : 'Seleccionar archivo .csv'}
+            {csvText ? 'Archivo cargado — haz clic para cambiar' : 'Seleccionar archivo .csv o .xlsx (Excel)'}
           </span>
           <input
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls"
             className="hidden"
             onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
           />
