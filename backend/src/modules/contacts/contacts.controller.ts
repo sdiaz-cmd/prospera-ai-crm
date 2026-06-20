@@ -58,3 +58,21 @@ export async function deleteContact(req: AuthenticatedRequest, res: Response) {
     sendError(res, m, m.includes('encontrado') ? 404 : 500);
   }
 }
+
+export async function importContacts(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { csvContent, assigneeId } = req.body;
+    if (!csvContent) { sendError(res, 'csvContent requerido', 400); return; }
+    const result = await svc.importBulk(req.user!.companyId, csvContent, assigneeId);
+    sendSuccess(res, result, `${result.imported} contactos importados`, 200);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+export async function exportContacts(req: AuthenticatedRequest, res: Response) {
+  try {
+    const csv = svc.exportCsv(req.user!.companyId);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="contactos.csv"');
+    res.send('﻿' + csv); // BOM for Excel
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}

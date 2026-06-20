@@ -102,6 +102,111 @@ export class ContactsService {
     run('DELETE FROM contacts WHERE id = ? AND company_id = ?', [id, companyId]);
   }
 
+  private parseCsv(content: string): Record<string, string>[] {
+    const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    if (lines.length < 2) return [];
+
+    const parseRow = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; continue; }
+        if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+        current += line[i];
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseRow(lines[0]).map(h => h.toLowerCase().trim());
+    const rows: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const values = parseRow(lines[i]);
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  async importBulk(companyId: string, csvContent: string, assigneeId?: string): Promise<{ imported: number; duplicates: number; errors: { row: number; message: string }[] }> {
+    const rows = this.parseCsv(csvContent);
+
+    const map = (row: Record<string, string>, ...keys: string[]): string => {
+      for (const k of keys) { if (row[k] !== undefined && row[k] !== '') return row[k]; }
+      return '';
+    };
+
+    let imported = 0, duplicates = 0;
+    const errors: { row: number; message: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+
+      const firstName = map(row, 'nombre', 'firstname', 'first_name', 'nombre*');
+      if (!firstName) { errors.push({ row: rowNum, message: 'Nombre requerido' }); continue; }
+
+      const email = map(row, 'email', 'correo', 'e-mail');
+
+      if (email) {
+        const existing = get('SELECT id FROM contacts WHERE email = ? AND company_id = ?', [email, companyId]);
+        if (existing) { duplicates++; continue; }
+      }
+
+      try {
+        const id = uuid();
+        run(`INSERT INTO contacts (id, company_id, assignee_id, first_name, last_name, email, phone, mobile, position, department, source, status, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`,
+          [id, companyId, assigneeId || null, firstName,
+            map(row, 'apellido', 'lastname', 'last_name') || null,
+            email || null,
+            map(row, 'telefono', 'teléfono', 'phone', 'tel') || null,
+            map(row, 'movil', 'móvil', 'mobile', 'celular') || null,
+            map(row, 'cargo', 'position', 'puesto') || null,
+            map(row, 'departamento', 'department', 'depto') || null,
+            map(row, 'fuente', 'source', 'origen') || 'other',
+            map(row, 'notas', 'notes', 'nota') || null,
+          ]);
+        imported++;
+      } catch (e) {
+        errors.push({ row: rowNum, message: (e as Error).message });
+      }
+    }
+
+    return { imported, duplicates, errors };
+  }
+
+  exportCsv(companyId: string): string {
+    const contacts = all<Record<string, unknown>>(`
+      SELECT c.first_name, c.last_name, c.email, c.phone, c.mobile,
+             c.position, c.department, c.source, c.notes,
+             u.first_name as assignee_first, u.last_name as assignee_last
+      FROM contacts c
+      LEFT JOIN users u ON c.assignee_id = u.id
+      WHERE c.company_id = ?
+      ORDER BY c.created_at DESC
+    `, [companyId]);
+
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+
+    const header = 'nombre,apellido,email,telefono,movil,cargo,departamento,fuente,notas,ejecutivo';
+    const rows = contacts.map(c =>
+      [c.first_name, c.last_name, c.email, c.phone, c.mobile,
+       c.position, c.department, c.source, c.notes,
+       c.assignee_first ? `${c.assignee_first} ${c.assignee_last}` : '']
+      .map(esc).join(',')
+    );
+
+    return [header, ...rows].join('\n');
+  }
+
   private assertExists(id: string, companyId: string) {
     const ex = get('SELECT id FROM contacts WHERE id = ? AND company_id = ?', [id, companyId]);
     if (!ex) throw new Error('Contacto no encontrado');

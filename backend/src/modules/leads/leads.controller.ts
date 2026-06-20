@@ -90,3 +90,21 @@ export async function getLeadStats(req: AuthenticatedRequest, res: Response) {
     sendSuccess(res, await svc.getStats(req.user!.companyId));
   } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
 }
+
+export async function importLeads(req: AuthenticatedRequest, res: Response) {
+  try {
+    const { csvContent, assigneeId } = req.body;
+    if (!csvContent) { sendError(res, 'csvContent requerido', 400); return; }
+    const result = await svc.importBulk(req.user!.companyId, csvContent, assigneeId);
+    sendSuccess(res, result, `${result.imported} leads importados`, 200);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+export async function exportLeads(req: AuthenticatedRequest, res: Response) {
+  try {
+    const csv = svc.exportCsv(req.user!.companyId);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="leads.csv"');
+    res.send('﻿' + csv); // BOM for Excel
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}

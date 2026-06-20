@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Filter, LayoutGrid, List, Star, MoreVertical, UserCheck, Trash2, X, Telescope, ExternalLink, CheckSquare, Square, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, LayoutGrid, List, Star, MoreVertical, UserCheck, Trash2, X, Telescope, ExternalLink, CheckSquare, Square, Loader2, Upload, Download, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { leadsService, apolloService } from '@/services/crm.service';
 import { usersService } from '@/services/users.service';
@@ -12,6 +12,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { formatDate, LEAD_STATUS, LEAD_SOURCES, cn } from '@/utils/helpers';
+import { useAuthStore } from '@/store/authStore';
 
 const STATUS_BADGE: Record<string, 'default' | 'info' | 'purple' | 'success' | 'warning' | 'danger'> = {
   new: 'info',
@@ -379,24 +380,186 @@ function ApolloSearchModal({ onClose, onImported }: { onClose: () => void; onImp
   );
 }
 
+// ─── Import Modal ─────────────────────────────────────────────────
+
+function ImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
+  const [csvText, setCsvText] = useState('');
+  const [preview, setPreview] = useState<string[][]>([]);
+  const [assigneeId, setAssigneeId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ imported: number; duplicates: number; errors: { row: number; message: string }[] } | null>(null);
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users-list'],
+    queryFn: () => usersService.getAll({ limit: 100 }),
+  });
+  const users = (usersData?.data as { id: string; firstName: string; lastName: string }[]) || [];
+
+  const handleFile = (f: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      setCsvText(text);
+      const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.trim());
+      setPreview(lines.slice(0, 6).map(l => l.split(',').map(c => c.replace(/^"|"$/g, ''))));
+    };
+    reader.readAsText(f, 'UTF-8');
+  };
+
+  const handleImport = async () => {
+    if (!csvText) return;
+    setLoading(true);
+    try {
+      const r = await leadsService.import(csvText, assigneeId || undefined);
+      setResult(r);
+      onImported();
+    } catch {
+      toast.error('Error al importar');
+    }
+    setLoading(false);
+  };
+
+  const downloadTemplate = () => {
+    const template = 'nombre,apellido,email,telefono,empresa,cargo,fuente,estado,puntuacion,notas\nMaría,López,maria@emp.com,+56987654321,Empresa SA,Directora,referral,new,75,\n';
+    const blob = new Blob(['﻿' + template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'plantilla_leads.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const selectClass = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500";
+
+  return (
+    <div className="space-y-4">
+      {/* Template + File */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={downloadTemplate}
+          className="flex items-center gap-2 text-sm text-primary-600 border border-primary-300 rounded-lg px-3 py-2 hover:bg-primary-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Descargar plantilla
+        </button>
+        <label className="flex-1 flex items-center gap-2 border-2 border-dashed border-gray-300 rounded-lg px-4 py-3 cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
+          <Upload className="w-4 h-4 text-gray-400" />
+          <span className="text-sm text-gray-500">
+            {csvText ? 'Archivo cargado — haz clic para cambiar' : 'Seleccionar archivo .csv'}
+          </span>
+          <input
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+          />
+        </label>
+      </div>
+
+      {/* Preview */}
+      {preview.length > 0 && (
+        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50">
+              <tr>
+                {preview[0]?.map((h, i) => (
+                  <th key={i} className="px-3 py-2 text-left font-medium text-gray-600 whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {preview.slice(1).map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-3 py-1.5 text-gray-600 whitespace-nowrap max-w-[120px] truncate">{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {preview.length >= 6 && (
+            <p className="text-xs text-gray-400 px-3 py-1.5 border-t border-gray-100">Mostrando primeras 5 filas...</p>
+          )}
+        </div>
+      )}
+
+      {/* Assignee */}
+      {csvText && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Asignar a (opcional)</label>
+          <select className={selectClass} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+            <option value="">— Sin asignar —</option>
+            {users.map(u => (
+              <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div className="rounded-lg border border-gray-200 p-4 space-y-2">
+          <p className="text-sm font-medium text-gray-800">
+            {result.imported > 0 && <span className="text-green-600">Importados: {result.imported}. </span>}
+            {result.duplicates > 0 && <span className="text-yellow-600">Duplicados omitidos: {result.duplicates}. </span>}
+            {result.imported === 0 && result.duplicates === 0 && result.errors.length === 0 && <span className="text-gray-500">Sin filas para procesar.</span>}
+          </p>
+          {result.errors.length > 0 && (
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              <p className="text-xs font-medium text-red-600">Errores ({result.errors.length}):</p>
+              {result.errors.map((err, i) => (
+                <p key={i} className="text-xs text-red-500">Fila {err.row}: {err.message}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3 justify-end pt-1">
+        <Button variant="outline" onClick={onClose}>Cerrar</Button>
+        {!result && (
+          <Button onClick={handleImport} loading={loading} disabled={!csvText}>
+            Importar
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────
 
 export function Leads() {
   const qc = useQueryClient();
+  const { user } = useAuthStore();
   const [view, setView] = useState<'table' | 'kanban'>('table');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [showApollo, setShowApollo] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [myOnly, setMyOnly] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  const handleExport = async () => {
+    try {
+      const blob = await leadsService.export();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'leads.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Error al exportar leads');
+    }
+  };
 
   // Check if current user can use Apollo search
   const { data: apolloPerm } = useQuery({
@@ -406,8 +569,13 @@ export function Leads() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['leads', debouncedSearch, statusFilter],
-    queryFn: () => leadsService.getAll({ search: debouncedSearch || undefined, status: statusFilter || undefined, limit: 100 }),
+    queryKey: ['leads', debouncedSearch, statusFilter, myOnly],
+    queryFn: () => leadsService.getAll({
+      search: debouncedSearch || undefined,
+      status: statusFilter || undefined,
+      limit: 100,
+      assigneeId: myOnly ? user?.id : undefined,
+    }),
   });
 
   const { data: stats } = useQuery({ queryKey: ['lead-stats'], queryFn: leadsService.getStats });
@@ -492,6 +660,12 @@ export function Leads() {
               Buscar Prospectos
             </Button>
           )}
+          <Button variant="outline" leftIcon={<Download className="w-4 h-4" />} onClick={handleExport}>
+            Exportar
+          </Button>
+          <Button variant="outline" leftIcon={<Upload className="w-4 h-4" />} onClick={() => setShowImport(true)}>
+            Importar
+          </Button>
           <Button leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowCreate(true)}>
             Nuevo Lead
           </Button>
@@ -530,6 +704,18 @@ export function Leads() {
             <X className="w-3.5 h-3.5 ml-1" />
           </button>
         )}
+        <button
+          onClick={() => setMyOnly(o => !o)}
+          className={cn(
+            'flex items-center gap-1.5 text-sm border rounded-lg px-3 py-2 transition-colors',
+            myOnly
+              ? 'border-primary-500 bg-primary-50 text-primary-700 font-medium'
+              : 'border-gray-300 text-gray-600 hover:border-gray-400',
+          )}
+        >
+          <User className="w-3.5 h-3.5" />
+          Mis leads
+        </button>
         <div className="ml-auto flex items-center gap-1 border border-gray-200 rounded-lg p-1 bg-white">
           <button onClick={() => setView('table')} className={cn('p-1.5 rounded', view === 'table' ? 'bg-primary-100 text-primary-700' : 'text-gray-400 hover:text-gray-600')}>
             <List className="w-4 h-4" />
@@ -686,6 +872,17 @@ export function Leads() {
       <Modal isOpen={showApollo} onClose={() => setShowApollo(false)} title="Buscar Prospectos en Apollo" size="xl">
         <ApolloSearchModal
           onClose={() => setShowApollo(false)}
+          onImported={() => {
+            qc.invalidateQueries({ queryKey: ['leads'] });
+            qc.invalidateQueries({ queryKey: ['lead-stats'] });
+          }}
+        />
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal isOpen={showImport} onClose={() => setShowImport(false)} title="Importar Leads" size="lg">
+        <ImportModal
+          onClose={() => setShowImport(false)}
           onImported={() => {
             qc.invalidateQueries({ queryKey: ['leads'] });
             qc.invalidateQueries({ queryKey: ['lead-stats'] });

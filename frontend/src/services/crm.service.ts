@@ -31,6 +31,14 @@ export const leadsService = {
   async delete(id: string) {
     await api.delete(`/leads/${id}`);
   },
+  async import(csvContent: string, assigneeId?: string) {
+    const res = await api.post('/leads/import', { csvContent, assigneeId });
+    return res.data.data as { imported: number; duplicates: number; errors: { row: number; message: string }[] };
+  },
+  async export() {
+    const res = await api.get('/leads/export', { responseType: 'blob' });
+    return res.data as Blob;
+  },
 };
 
 // ─── Contacts ─────────────────────────────────────────────────────
@@ -54,6 +62,14 @@ export const contactsService = {
   },
   async delete(id: string) {
     await api.delete(`/contacts/${id}`);
+  },
+  async import(csvContent: string, assigneeId?: string) {
+    const res = await api.post('/contacts/import', { csvContent, assigneeId });
+    return res.data.data as { imported: number; duplicates: number; errors: { row: number; message: string }[] };
+  },
+  async export() {
+    const res = await api.get('/contacts/export', { responseType: 'blob' });
+    return res.data as Blob;
   },
 };
 

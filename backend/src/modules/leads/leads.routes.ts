@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
 import {
   getLeads, getLead, createLead, updateLead, convertLead, deleteLead, getLeadStats,
-  validateCreate, validateUpdate,
+  validateCreate, validateUpdate, importLeads, exportLeads,
 } from './leads.controller';
 
 const router = Router();
@@ -10,6 +10,8 @@ router.use(authenticate);
 
 router.get('/stats', getLeadStats);
 router.get('/', getLeads);
+router.post('/import', importLeads);
+router.get('/export', exportLeads);
 router.get('/:id', getLead);
 router.post('/', validateCreate, createLead);
 router.put('/:id', validateUpdate, updateLead);

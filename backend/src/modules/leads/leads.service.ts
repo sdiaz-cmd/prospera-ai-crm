@@ -121,6 +121,119 @@ export class LeadsService {
     return { ...stats, total: Number(total?.c || 0) };
   }
 
+  private parseCsv(content: string): Record<string, string>[] {
+    const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    if (lines.length < 2) return [];
+
+    const parseRow = (line: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQuotes = !inQuotes; continue; }
+        if (line[i] === ',' && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+        current += line[i];
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseRow(lines[0]).map(h => h.toLowerCase().trim());
+    const rows: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const values = parseRow(lines[i]);
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  async importBulk(companyId: string, csvContent: string, assigneeId?: string): Promise<{ imported: number; duplicates: number; errors: { row: number; message: string }[] }> {
+    const rows = this.parseCsv(csvContent);
+
+    const map = (row: Record<string, string>, ...keys: string[]): string => {
+      for (const k of keys) { if (row[k] !== undefined && row[k] !== '') return row[k]; }
+      return '';
+    };
+
+    const validStatuses = ['new', 'contacted', 'qualified', 'unqualified', 'converted'];
+
+    let imported = 0, duplicates = 0;
+    const errors: { row: number; message: string }[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+
+      const firstName = map(row, 'nombre', 'firstname', 'first_name', 'nombre*');
+      if (!firstName) { errors.push({ row: rowNum, message: 'Nombre requerido' }); continue; }
+
+      const email = map(row, 'email', 'correo', 'e-mail');
+
+      if (email) {
+        const existing = get('SELECT id FROM leads WHERE email = ? AND company_id = ?', [email, companyId]);
+        if (existing) { duplicates++; continue; }
+      }
+
+      try {
+        const id = uuid();
+        const rawStatus = map(row, 'estado', 'status');
+        const status = validStatuses.includes(rawStatus) ? rawStatus : 'new';
+        const rawScore = map(row, 'puntuacion', 'puntuación', 'score');
+        const score = rawScore ? Math.min(100, Math.max(0, Number(rawScore) || 0)) : 0;
+
+        run(`INSERT INTO leads (id, company_id, assignee_id, first_name, last_name, email, phone, company, position, source, status, score, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [id, companyId, assigneeId || null, firstName,
+            map(row, 'apellido', 'lastname', 'last_name') || null,
+            email || null,
+            map(row, 'telefono', 'teléfono', 'phone', 'tel') || null,
+            map(row, 'empresa', 'company', 'organization') || null,
+            map(row, 'cargo', 'position', 'puesto') || null,
+            map(row, 'fuente', 'source', 'origen') || 'other',
+            status,
+            score,
+            map(row, 'notas', 'notes', 'nota') || null,
+          ]);
+        imported++;
+      } catch (e) {
+        errors.push({ row: rowNum, message: (e as Error).message });
+      }
+    }
+
+    return { imported, duplicates, errors };
+  }
+
+  exportCsv(companyId: string): string {
+    const leads = all<Record<string, unknown>>(`
+      SELECT l.first_name, l.last_name, l.email, l.phone, l.company,
+             l.position, l.source, l.status, l.score, l.notes,
+             u.first_name as assignee_first, u.last_name as assignee_last
+      FROM leads l
+      LEFT JOIN users u ON l.assignee_id = u.id
+      WHERE l.company_id = ?
+      ORDER BY l.created_at DESC
+    `, [companyId]);
+
+    const esc = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+
+    const header = 'nombre,apellido,email,telefono,empresa,cargo,fuente,estado,puntuacion,notas,ejecutivo';
+    const rows = leads.map(l =>
+      [l.first_name, l.last_name, l.email, l.phone, l.company,
+       l.position, l.source, l.status, l.score, l.notes,
+       l.assignee_first ? `${l.assignee_first} ${l.assignee_last}` : '']
+      .map(esc).join(',')
+    );
+
+    return [header, ...rows].join('\n');
+  }
+
   private assertExists(id: string, companyId: string) {
     const ex = get('SELECT id FROM leads WHERE id = ? AND company_id = ?', [id, companyId]);
     if (!ex) throw new Error('Lead no encontrado');

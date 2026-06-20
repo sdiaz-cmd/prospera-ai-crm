@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
-import { getContacts, getContact, createContact, updateContact, deleteContact, validateCreate } from './contacts.controller';
+import { getContacts, getContact, createContact, updateContact, deleteContact, validateCreate, importContacts, exportContacts } from './contacts.controller';
 
 const router = Router();
 router.use(authenticate);
 
 router.get('/', getContacts);
+router.post('/import', importContacts);
+router.get('/export', exportContacts);
 router.get('/:id', getContact);
 router.post('/', validateCreate, createContact);
 router.put('/:id', updateContact);
