@@ -7,6 +7,13 @@ import {
   importProspects,
   getApolloSettings,
   updateApolloSettings,
+  listSavedSearches,
+  createSavedSearch,
+  updateSavedSearch,
+  deleteSavedSearch,
+  runSavedSearch,
+  runQuickImport,
+  listImportLogs,
   ApolloSearchParams,
 } from './apollo.service';
 import { get } from '../../database/db';
@@ -105,7 +112,6 @@ export async function importContacts(req: AuthenticatedRequest, res: Response) {
 }
 
 // ─── GET /api/apollo/can-search ───────────────────────────────────────────────
-// Lightweight endpoint so the frontend can check permissions without exposing settings
 
 export async function checkPermission(req: AuthenticatedRequest, res: Response) {
   try {
@@ -115,4 +121,86 @@ export async function checkPermission(req: AuthenticatedRequest, res: Response) 
   } catch (e: unknown) {
     sendError(res, (e as Error).message, 500);
   }
+}
+
+// ─── GET /api/apollo/saved-searches ──────────────────────────────────────────
+
+export async function getSavedSearches(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    sendSuccess(res, listSavedSearches(req.user!.companyId));
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── POST /api/apollo/saved-searches ─────────────────────────────────────────
+
+export async function createSearch(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    const { name, criteria } = req.body as { name: string; criteria: ApolloSearchParams };
+    if (!name?.trim()) return sendError(res, 'El nombre es requerido', 400);
+    const saved = createSavedSearch(req.user!.companyId, req.user!.userId, name.trim(), criteria || {});
+    sendSuccess(res, saved, 'Búsqueda guardada', 201);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── PUT /api/apollo/saved-searches/:id ──────────────────────────────────────
+
+export async function updateSearch(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    const { name, criteria } = req.body as { name?: string; criteria?: ApolloSearchParams };
+    updateSavedSearch(req.params.id, req.user!.companyId, { name, criteria });
+    sendSuccess(res, listSavedSearches(req.user!.companyId).find(s => s.id === req.params.id), 'Actualizado');
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── DELETE /api/apollo/saved-searches/:id ───────────────────────────────────
+
+export async function deleteSearch(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    deleteSavedSearch(req.params.id, req.user!.companyId);
+    sendSuccess(res, null, 'Eliminado');
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── POST /api/apollo/saved-searches/:id/run ─────────────────────────────────
+
+export async function runSearch(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    const settings = getApolloSettings(req.user!.companyId);
+    if (!settings.apiKey) return sendError(res, 'Configura tu API Key de Apollo en Ajustes', 400);
+    const result = await runSavedSearch(req.user!.companyId, req.user!.userId, settings.apiKey, req.params.id);
+    sendSuccess(res, result, `${result.imported} prospectos importados${result.skipped ? `, ${result.skipped} ya existían` : ''}`);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── POST /api/apollo/quick-import ───────────────────────────────────────────
+
+export async function quickImport(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    const settings = getApolloSettings(req.user!.companyId);
+    if (!settings.apiKey) return sendError(res, 'Configura tu API Key de Apollo en Ajustes', 400);
+    const result = await runQuickImport(req.user!.companyId, req.user!.userId, settings.apiKey, req.body.criteria || {});
+    sendSuccess(res, result, `${result.imported} prospectos importados`);
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
+}
+
+// ─── GET /api/apollo/import-logs ─────────────────────────────────────────────
+
+export async function getImportLogs(req: AuthenticatedRequest, res: Response) {
+  try {
+    if (!canUserUseApollo(req.user!.companyId, req.user!.userId))
+      return sendError(res, 'Sin permiso', 403);
+    sendSuccess(res, listImportLogs(req.user!.companyId, 50));
+  } catch (e: unknown) { sendError(res, (e as Error).message, 500); }
 }

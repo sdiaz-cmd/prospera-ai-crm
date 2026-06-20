@@ -15,6 +15,7 @@ import { ComingSoon } from '@/pages/ComingSoon';
 // CRM
 import { Leads } from '@/pages/crm/Leads';
 import { Contacts } from '@/pages/crm/Contacts';
+import { Prospecting } from '@/pages/crm/Prospecting';
 import { Accounts } from '@/pages/crm/Accounts';
 import { Opportunities } from '@/pages/crm/Opportunities';
 import { Activities } from '@/pages/crm/Activities';
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="/crm/leads" replace /> },
               { path: 'leads', element: <Leads /> },
+              { path: 'prospecting', element: <Prospecting /> },
               { path: 'contacts', element: <Contacts /> },
               { path: 'accounts', element: <Accounts /> },
               { path: 'opportunities', element: <Opportunities /> },

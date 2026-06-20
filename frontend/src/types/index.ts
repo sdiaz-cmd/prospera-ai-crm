@@ -426,3 +426,30 @@ export interface ApolloPermission {
   allowed: boolean;
   hasApiKey: boolean;
 }
+
+export interface ApolloSearchCriteria {
+  name?: string;
+  title?: string;
+  organization?: string;
+  location?: string;
+  industry?: string;
+}
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  criteria: ApolloSearchCriteria;
+  lastRunAt: string | null;
+  totalImported: number;
+  createdAt: string;
+}
+
+export interface ImportLog {
+  id: string;
+  savedSearchId: string | null;
+  searchName: string | null;
+  criteria: ApolloSearchCriteria;
+  imported: number;
+  skipped: number;
+  createdAt: string;
+}

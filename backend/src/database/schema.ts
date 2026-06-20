@@ -908,4 +908,34 @@ export function createSchema() {
   } catch (err) {
     console.error('[DB] Error en migración de roles:', (err as Error).message);
   }
+
+  // ── Apollo: búsquedas guardadas + historial de importaciones ────────
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS apollo_saved_searches (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      criteria TEXT NOT NULL DEFAULT '{}',
+      last_run_at TEXT,
+      total_imported INTEGER DEFAULT 0,
+      created_by TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS apollo_import_logs (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      saved_search_id TEXT,
+      search_name TEXT,
+      criteria TEXT NOT NULL DEFAULT '{}',
+      imported INTEGER DEFAULT 0,
+      skipped INTEGER DEFAULT 0,
+      created_by TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+      FOREIGN KEY (saved_search_id) REFERENCES apollo_saved_searches(id) ON DELETE SET NULL
+    );
+  `);
 }

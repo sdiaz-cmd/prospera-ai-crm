@@ -6,7 +6,7 @@ import {
   Zap, Globe, Package, Bot, Lock, MessageCircle,
   CheckSquare, FileText, ReceiptText, Truck, Users2,
   ChevronDown, TicketIcon, ChevronsUpDown, Plus, Check, Coins, FolderKanban,
-  Wrench, ClipboardList, CalendarDays, HardHat, Activity, X,
+  Wrench, ClipboardList, CalendarDays, HardHat, Activity, X, Telescope,
 } from 'lucide-react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { cn } from '@/utils/helpers';
@@ -526,6 +526,7 @@ export function Sidebar({ collapsed: collapsedDesktop, mobileOpen, onMobileClose
           mobileExpanded={mobileOpen}
           items={[
             { to: '/crm/leads',         icon: UserCircle,  label: t('nav.leads') },
+            { to: '/crm/prospecting',   icon: Telescope,   label: 'Prospección' },
             { to: '/crm/contacts',      icon: Users,       label: t('nav.contacts') },
             { to: '/crm/accounts',      icon: Building2,   label: t('nav.accounts') },
             { to: '/crm/opportunities', icon: Target,      label: t('nav.opportunities') },

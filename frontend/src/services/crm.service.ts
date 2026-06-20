@@ -1,5 +1,5 @@
 import api from './api';
-import type { Lead, Contact, Account, Opportunity, KanbanData, Activity, CrmTask, LeadStats, Quote, QuoteStats, Supplier, Product, ProductStats, Invoice, InvoiceStats, ApiResponse, ApolloContact, ApolloSearchResult, ApolloSettings, ApolloPermission } from '@/types';
+import type { Lead, Contact, Account, Opportunity, KanbanData, Activity, CrmTask, LeadStats, Quote, QuoteStats, Supplier, Product, ProductStats, Invoice, InvoiceStats, ApiResponse, ApolloContact, ApolloSearchResult, ApolloSettings, ApolloPermission, ApolloSearchCriteria, SavedSearch, ImportLog } from '@/types';
 
 // ─── Leads ────────────────────────────────────────────────────────
 
@@ -312,5 +312,32 @@ export const apolloService = {
   async import(contacts: ApolloContact[]) {
     const res = await api.post<ApiResponse<{ imported: number; skipped: number }>>('/apollo/import', { contacts });
     return res.data;
+  },
+  async listSavedSearches() {
+    const res = await api.get<ApiResponse<SavedSearch[]>>('/apollo/saved-searches');
+    return res.data.data!;
+  },
+  async createSavedSearch(data: { name: string; criteria: ApolloSearchCriteria }) {
+    const res = await api.post<ApiResponse<SavedSearch>>('/apollo/saved-searches', data);
+    return res.data.data!;
+  },
+  async updateSavedSearch(id: string, data: { name?: string; criteria?: ApolloSearchCriteria }) {
+    const res = await api.put<ApiResponse<SavedSearch>>(`/apollo/saved-searches/${id}`, data);
+    return res.data.data!;
+  },
+  async deleteSavedSearch(id: string) {
+    await api.delete(`/apollo/saved-searches/${id}`);
+  },
+  async runSavedSearch(id: string) {
+    const res = await api.post<ApiResponse<{ imported: number; skipped: number; total: number }>>(`/apollo/saved-searches/${id}/run`);
+    return res.data;
+  },
+  async quickImport(criteria: ApolloSearchCriteria) {
+    const res = await api.post<ApiResponse<{ imported: number; skipped: number; total: number }>>('/apollo/quick-import', { criteria });
+    return res.data;
+  },
+  async listImportLogs() {
+    const res = await api.get<ApiResponse<ImportLog[]>>('/apollo/import-logs');
+    return res.data.data!;
   },
 };

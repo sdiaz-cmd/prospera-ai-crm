@@ -207,6 +207,167 @@ export function importProspects(companyId: string, contacts: ApolloContact[]): I
   return { imported, skipped, leads };
 }
 
+// ─── Saved searches ──────────────────────────────────────────────────────────
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  criteria: ApolloSearchParams;
+  lastRunAt: string | null;
+  totalImported: number;
+  createdAt: string;
+}
+
+export function listSavedSearches(companyId: string): SavedSearch[] {
+  const rows = all<Record<string, unknown>>(
+    'SELECT * FROM apollo_saved_searches WHERE company_id = ? ORDER BY created_at DESC',
+    [companyId],
+  );
+  return rows.map(r => ({
+    id: r.id as string,
+    name: r.name as string,
+    criteria: JSON.parse(r.criteria as string),
+    lastRunAt: r.last_run_at as string | null,
+    totalImported: Number(r.total_imported || 0),
+    createdAt: r.created_at as string,
+  }));
+}
+
+export function createSavedSearch(
+  companyId: string,
+  userId: string,
+  name: string,
+  criteria: ApolloSearchParams,
+): SavedSearch {
+  const id = uuid();
+  run(
+    `INSERT INTO apollo_saved_searches (id, company_id, name, criteria, created_by)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, companyId, name, JSON.stringify(criteria), userId],
+  );
+  return listSavedSearches(companyId).find(s => s.id === id)!;
+}
+
+export function updateSavedSearch(
+  id: string,
+  companyId: string,
+  data: { name?: string; criteria?: ApolloSearchParams },
+) {
+  if (data.name) run("UPDATE apollo_saved_searches SET name = ?, updated_at = datetime('now') WHERE id = ? AND company_id = ?", [data.name, id, companyId]);
+  if (data.criteria) run("UPDATE apollo_saved_searches SET criteria = ?, updated_at = datetime('now') WHERE id = ? AND company_id = ?", [JSON.stringify(data.criteria), id, companyId]);
+}
+
+export function deleteSavedSearch(id: string, companyId: string) {
+  run('DELETE FROM apollo_saved_searches WHERE id = ? AND company_id = ?', [id, companyId]);
+}
+
+// ─── Import history ───────────────────────────────────────────────────────────
+
+export interface ImportLog {
+  id: string;
+  savedSearchId: string | null;
+  searchName: string | null;
+  criteria: ApolloSearchParams;
+  imported: number;
+  skipped: number;
+  createdAt: string;
+}
+
+export function listImportLogs(companyId: string, limit = 30): ImportLog[] {
+  const rows = all<Record<string, unknown>>(
+    'SELECT * FROM apollo_import_logs WHERE company_id = ? ORDER BY created_at DESC LIMIT ?',
+    [companyId, limit],
+  );
+  return rows.map(r => ({
+    id: r.id as string,
+    savedSearchId: r.saved_search_id as string | null,
+    searchName: r.search_name as string | null,
+    criteria: JSON.parse(r.criteria as string),
+    imported: Number(r.imported || 0),
+    skipped: Number(r.skipped || 0),
+    createdAt: r.created_at as string,
+  }));
+}
+
+function logImport(
+  companyId: string,
+  userId: string,
+  result: ImportResult,
+  criteria: ApolloSearchParams,
+  savedSearchId?: string,
+  searchName?: string,
+) {
+  run(
+    `INSERT INTO apollo_import_logs (id, company_id, saved_search_id, search_name, criteria, imported, skipped, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [uuid(), companyId, savedSearchId || null, searchName || null, JSON.stringify(criteria), result.imported, result.skipped, userId],
+  );
+  if (savedSearchId) {
+    run(
+      `UPDATE apollo_saved_searches
+       SET last_run_at = datetime('now'), total_imported = total_imported + ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      [result.imported, savedSearchId],
+    );
+  }
+}
+
+// ─── Run saved search (search + auto-import) ─────────────────────────────────
+
+export async function runSavedSearch(
+  companyId: string,
+  userId: string,
+  apiKey: string,
+  savedSearchId: string,
+): Promise<{ imported: number; skipped: number; total: number }> {
+  const row = get<{ name: string; criteria: string }>(
+    'SELECT name, criteria FROM apollo_saved_searches WHERE id = ? AND company_id = ?',
+    [savedSearchId, companyId],
+  );
+  if (!row) throw new Error('Búsqueda no encontrada');
+
+  const criteria: ApolloSearchParams = JSON.parse(row.criteria);
+  const name = row.name;
+
+  // Fetch all pages (max 3 pages = 75 contacts to avoid burning credits)
+  let allContacts: ApolloContact[] = [];
+  let total = 0;
+  for (let page = 1; page <= 3; page++) {
+    const res = await searchApolloContacts(apiKey, { ...criteria, page, perPage: 25 });
+    allContacts = [...allContacts, ...res.contacts];
+    total = res.total;
+    if (res.contacts.length < 25) break;
+  }
+
+  const result = importProspects(companyId, allContacts);
+  logImport(companyId, userId, result, criteria, savedSearchId, name);
+
+  return { imported: result.imported, skipped: result.skipped, total };
+}
+
+// ─── Quick run (ad-hoc search + auto-import without saving) ──────────────────
+
+export async function runQuickImport(
+  companyId: string,
+  userId: string,
+  apiKey: string,
+  criteria: ApolloSearchParams,
+): Promise<{ imported: number; skipped: number; total: number }> {
+  let allContacts: ApolloContact[] = [];
+  let total = 0;
+  for (let page = 1; page <= 3; page++) {
+    const res = await searchApolloContacts(apiKey, { ...criteria, page, perPage: 25 });
+    allContacts = [...allContacts, ...res.contacts];
+    total = res.total;
+    if (res.contacts.length < 25) break;
+  }
+
+  const result = importProspects(companyId, allContacts);
+  logImport(companyId, userId, result, criteria);
+
+  return { imported: result.imported, skipped: result.skipped, total };
+}
+
 // ─── Settings helpers ─────────────────────────────────────────────────────────
 
 export function getApolloSettings(companyId: string) {
