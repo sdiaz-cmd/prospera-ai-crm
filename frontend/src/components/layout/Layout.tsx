@@ -56,7 +56,7 @@ export function Layout() {
       <main
         className={cn(
           'transition-all duration-300 pt-14 min-h-screen',
-          'lg:' + (sidebarCollapsed ? 'ml-[60px]' : 'ml-[240px]'),
+          sidebarCollapsed ? 'lg:ml-[60px]' : 'lg:ml-[240px]',
           'ml-0'
         )}
       >
