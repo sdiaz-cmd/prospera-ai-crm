@@ -137,6 +137,18 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
 
   return (
     <div className="space-y-4">
+      {/* Assignee — always visible first */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Asignar ejecutivo (opcional)</label>
+        <select className={selectClass} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
+          <option value="">— Sin asignar —</option>
+          {users.map(u => (
+            <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-400 mt-1">Todos los contactos importados quedarán asignados a este ejecutivo.</p>
+      </div>
+
       {/* Template + File */}
       <div className="flex items-center gap-3">
         <button
@@ -184,19 +196,6 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
           {preview.length >= 6 && (
             <p className="text-xs text-gray-400 px-3 py-1.5 border-t border-gray-100">Mostrando primeras 5 filas...</p>
           )}
-        </div>
-      )}
-
-      {/* Assignee */}
-      {csvText && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Asignar a (opcional)</label>
-          <select className={selectClass} value={assigneeId} onChange={e => setAssigneeId(e.target.value)}>
-            <option value="">— Sin asignar —</option>
-            {users.map(u => (
-              <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
-            ))}
-          </select>
         </div>
       )}
 
