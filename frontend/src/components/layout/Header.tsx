@@ -1,13 +1,17 @@
-import { useState } from 'react';
-import { Bell, Search, Menu, LogOut, User, Settings, ChevronDown, Moon, Sun, Languages } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, Search, Menu, LogOut, User, Settings, ChevronDown, Moon, Sun, Languages, CheckCheck, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/auth.service';
+import { notificationsService } from '@/services/crm.service';
 import { Avatar } from '../ui/Avatar';
 import { cn } from '@/utils/helpers';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { AppNotification } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -18,8 +22,42 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
   const { user, company, clearAuth, refreshToken } = useAuthStore();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unread, setUnread] = useState(0);
   const { isDark, toggleTheme } = useTheme();
   const { lang, toggleLang, t } = useLanguage();
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationsService.list();
+      setNotifications(data.items);
+      setUnread(data.unread);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 60_000); // refresh every minute
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsService.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnread(0);
+    } catch { /* silent */ }
+  };
+
+  const handleNotifClick = async (notif: AppNotification) => {
+    if (!notif.isRead) {
+      await notificationsService.markRead(notif.id);
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+      setUnread(prev => Math.max(0, prev - 1));
+    }
+    if (notif.link) { navigate(notif.link); setNotifOpen(false); }
+  };
 
   const handleLogout = async () => {
     try {
@@ -136,10 +174,80 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         </button>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg text-gray-400 hover:bg-black/[0.05] hover:text-gray-600 transition-all duration-150">
-          <Bell style={{ width: 18, height: 18 }} />
-          <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full ring-2 ring-white" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => { setNotifOpen(o => !o); setDropdownOpen(false); }}
+            className="relative p-2 rounded-lg text-gray-400 hover:bg-black/[0.05] hover:text-gray-600 transition-all duration-150"
+          >
+            <Bell style={{ width: 18, height: 18 }} />
+            {unread > 0 && (
+              <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+
+          {notifOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setNotifOpen(false)} />
+              <div
+                className="absolute right-0 top-10 z-20 w-80 rounded-2xl overflow-hidden shadow-2xl"
+                style={{
+                  background: isDark ? 'rgba(22,29,45,0.98)' : 'rgba(255,255,255,0.98)',
+                  border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.09)',
+                  backdropFilter: 'blur(20px)',
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-blue-500" />
+                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>Notificaciones</span>
+                    {unread > 0 && <span className="text-xs bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 font-medium">{unread} nueva{unread !== 1 ? 's' : ''}</span>}
+                  </div>
+                  {unread > 0 && (
+                    <button onClick={handleMarkAllRead} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors">
+                      <CheckCheck className="w-3.5 h-3.5" /> Leer todas
+                    </button>
+                  )}
+                </div>
+
+                {/* List */}
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Sin notificaciones</p>
+                    </div>
+                  ) : (
+                    notifications.map(notif => (
+                      <button
+                        key={notif.id}
+                        onClick={() => handleNotifClick(notif)}
+                        className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-black/[0.04] transition-colors border-b last:border-b-0 ${!notif.isRead ? (isDark ? 'bg-blue-900/20' : 'bg-blue-50/60') : ''}`}
+                        style={{ borderColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)' }}
+                      >
+                        <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!notif.isRead ? 'bg-blue-500' : 'bg-transparent'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium leading-snug ${isDark ? 'text-gray-100' : 'text-gray-800'} ${notif.isRead ? 'opacity-70' : ''}`}>
+                            {notif.title}
+                          </p>
+                          {notif.message && (
+                            <p className={`text-xs mt-0.5 truncate ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{notif.message}</p>
+                          )}
+                          <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: es })}
+                          </p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Divider */}
         <div className="w-px h-6 bg-gray-200 mx-1" style={{ background: isDark ? 'rgba(255,255,255,0.1)' : undefined }} />

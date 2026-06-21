@@ -453,3 +453,31 @@ export interface ImportLog {
   skipped: number;
   createdAt: string;
 }
+
+export interface ContactEmail {
+  id: string;
+  companyId: string;
+  contactId: string | null;
+  leadId: string | null;
+  fromEmail: string;
+  toEmail: string;
+  subject: string;
+  bodyHtml: string;
+  resendId: string | null;
+  openedAt: string | null;
+  sentBy: string | null;
+  sentByName: string | null;
+  createdAt: string;
+}
+
+export interface AppNotification {
+  id: string;
+  companyId: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string | null;
+  link: string | null;
+  isRead: boolean;
+  createdAt: string;
+}

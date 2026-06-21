@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { Plus, Search, MoreVertical, Trash2, Building2, Mail, Phone, Upload, Download, User } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -249,6 +250,7 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
 
 export function Contacts() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [dSearch, setDSearch] = useState('');
@@ -415,7 +417,7 @@ export function Contacts() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {contacts.map(c => (
-                  <tr key={c.id} className={`hover:bg-gray-50 transition-colors ${selected.has(c.id) ? 'bg-blue-50' : ''}`}>
+                  <tr key={c.id} onClick={() => navigate(`/crm/contacts/${c.id}`)} className={`hover:bg-gray-50 transition-colors cursor-pointer ${selected.has(c.id) ? 'bg-blue-50' : ''}`}>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
                         checked={selected.has(c.id)}

@@ -61,10 +61,16 @@ import whatsappSessionRoutes from './modules/whatsapp-session/whatsapp-session.r
 import { whatsAppSessionService } from './modules/whatsapp-session/whatsapp-session.service';
 import whatsappAgentRoutes from './modules/whatsapp-agent/whatsapp-agent.routes';
 import whatsappInboxRoutes from './modules/whatsapp-inbox/whatsapp-inbox.routes';
+// Email + Notifications
+import emailRoutes from './modules/email/email.routes';
+import notificationsRoutes from './modules/notifications/notifications.routes';
+// Cron
+import { startFollowupCron } from './cron/followup.cron';
 
 // Inicializar DB y sesiones
 createSchema();
 whatsAppSessionService.reconnectSaved().catch(console.error);
+startFollowupCron();
 
 const app = express();
 
@@ -219,6 +225,8 @@ app.use('/api/cost-centers', costCentersRoutes);
 // Operations
 app.use('/api/projects', projectsRoutes);
 app.use('/api/cuadrillas', cuadrillasRoutes);
+app.use('/api/emails', emailRoutes);
+app.use('/api/notifications', notificationsRoutes);
 // Inventory
 app.use('/api/inventory', authenticate, requireFeature('erp'), inventoryRoutes);
 // WhatsApp

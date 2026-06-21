@@ -1,5 +1,5 @@
 import api from './api';
-import type { Lead, Contact, Account, Opportunity, KanbanData, Activity, CrmTask, LeadStats, Quote, QuoteStats, Supplier, Product, ProductStats, Invoice, InvoiceStats, ApiResponse, ApolloContact, ApolloSearchResult, ApolloSettings, ApolloPermission, ApolloSearchCriteria, SavedSearch, ImportLog } from '@/types';
+import type { Lead, Contact, Account, Opportunity, KanbanData, Activity, CrmTask, LeadStats, Quote, QuoteStats, Supplier, Product, ProductStats, Invoice, InvoiceStats, ApiResponse, ApolloContact, ApolloSearchResult, ApolloSettings, ApolloPermission, ApolloSearchCriteria, SavedSearch, ImportLog, ContactEmail, AppNotification } from '@/types';
 
 // ─── Leads ────────────────────────────────────────────────────────
 
@@ -339,5 +339,39 @@ export const apolloService = {
   async listImportLogs() {
     const res = await api.get<ApiResponse<ImportLog[]>>('/apollo/import-logs');
     return res.data.data!;
+  },
+};
+
+// ─── Email ────────────────────────────────────────────────────────
+export const emailService = {
+  async listByContact(contactId: string) {
+    const res = await api.get<ApiResponse<ContactEmail[]>>(`/emails/contact/${contactId}`);
+    return res.data.data!;
+  },
+  async listByLead(leadId: string) {
+    const res = await api.get<ApiResponse<ContactEmail[]>>(`/emails/lead/${leadId}`);
+    return res.data.data!;
+  },
+  async sendToContact(contactId: string, data: { toEmail: string; subject: string; bodyHtml: string }) {
+    const res = await api.post<ApiResponse<ContactEmail>>(`/emails/contact/${contactId}`, data);
+    return res.data.data!;
+  },
+  async sendToLead(leadId: string, data: { toEmail: string; subject: string; bodyHtml: string }) {
+    const res = await api.post<ApiResponse<ContactEmail>>(`/emails/lead/${leadId}`, data);
+    return res.data.data!;
+  },
+};
+
+// ─── Notifications ────────────────────────────────────────────────
+export const notificationsService = {
+  async list() {
+    const res = await api.get<ApiResponse<{ items: AppNotification[]; unread: number }>>('/notifications');
+    return res.data.data!;
+  },
+  async markRead(id: string) {
+    await api.patch(`/notifications/${id}/read`);
+  },
+  async markAllRead() {
+    await api.patch('/notifications/read-all');
   },
 };

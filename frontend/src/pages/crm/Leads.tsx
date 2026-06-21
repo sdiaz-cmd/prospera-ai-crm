@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
 import { Plus, Search, Filter, LayoutGrid, List, Star, MoreVertical, UserCheck, Trash2, X, Telescope, ExternalLink, CheckSquare, Square, Loader2, Upload, Download, User } from 'lucide-react';
@@ -546,6 +547,7 @@ function ImportModal({ onClose, onImported }: { onClose: () => void; onImported:
 
 export function Leads() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [view, setView] = useState<'table' | 'kanban'>('table');
   const [search, setSearch] = useState('');
@@ -792,7 +794,7 @@ export function Leads() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {leads.map(lead => (
-                    <tr key={lead.id} className={`hover:bg-gray-50 transition-colors ${selected.has(lead.id) ? 'bg-blue-50' : ''}`}>
+                    <tr key={lead.id} onClick={() => navigate(`/crm/leads/${lead.id}`)} className={`hover:bg-gray-50 transition-colors cursor-pointer ${selected.has(lead.id) ? 'bg-blue-50' : ''}`}>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <input type="checkbox" className="w-4 h-4 rounded cursor-pointer accent-blue-600"
                           checked={selected.has(lead.id)}
@@ -851,7 +853,7 @@ export function Leads() {
               </div>
               <div className="space-y-2">
                 {col.leads.map(lead => (
-                  <KanbanCard key={lead.id} lead={lead} onClick={() => setEditing(lead)} />
+                  <KanbanCard key={lead.id} lead={lead} onClick={() => navigate(`/crm/leads/${lead.id}`)} />
                 ))}
                 {col.leads.length === 0 && (
                   <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg py-8 text-center">
