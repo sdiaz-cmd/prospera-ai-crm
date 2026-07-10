@@ -4,6 +4,7 @@ import { AuthState, LoginResponse } from '../types';
 
 interface AuthStore extends AuthState {
   setAuth: (data: LoginResponse & { isOwner?: boolean }) => void;
+  syncMe: (data: Omit<LoginResponse, 'accessToken' | 'refreshToken'> & { isOwner?: boolean }) => void;
   clearAuth: () => void;
   hasPermission: (permission: string) => boolean;
 }
@@ -65,6 +66,17 @@ export const useAuthStore = create<AuthStore>()(
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
           isAuthenticated: true,
+          isOwner: data.isOwner || false,
+        });
+      },
+
+      // Refresh user/company data without touching tokens (used on app load)
+      syncMe: (data) => {
+        set({
+          user: data.user,
+          company: data.company,
+          role: data.role,
+          permissions: data.permissions,
           isOwner: data.isOwner || false,
         });
       },

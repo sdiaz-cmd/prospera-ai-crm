@@ -4,12 +4,22 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { cn } from '@/utils/helpers';
 import { useTheme } from '@/contexts/ThemeContext';
+import { authService } from '@/services/auth.service';
+import { useAuthStore } from '@/store/authStore';
 
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { isDark } = useTheme();
   const location = useLocation();
+  const { syncMe } = useAuthStore();
+
+  // Sync fresh company/plan data from the server on every app load
+  // This ensures plan changes (trial → enterprise) reflect without requiring re-login
+  useEffect(() => {
+    authService.getMe().then(data => syncMe(data)).catch(() => { /* silent — tokens may need refresh */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Close mobile sidebar on route change
   useEffect(() => {
